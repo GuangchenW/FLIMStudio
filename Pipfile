@@ -7,6 +7,10 @@ name = "pypi"
 numpy = "*"
 matplotlib = "*"
 phasorpy = {extras = ["all"], version = "*"}
+lfdfiles = "*"
+sdtfile = "*"
+ptufile = "*"
+tiffile = "*"
 
 [dev-packages]
 

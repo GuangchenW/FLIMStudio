@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "3583d817a240ac3281830a0758f907d0548d0ea8bbdfc9edad0c765aa38b12f8"
+            "sha256": "2182c554d0b76441355c6ae78a09ac3706df651cf7277752e52b34d7c2eb001b"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -385,6 +385,8 @@
                 "sha256:f3577408d9c038031fd581a959cc6cee9dcfb78d5d11f0fe6ee9c4146689b7b5",
                 "sha256:ffb0ccd36a2b1ae16c4a4628b9095c3655d5a7d82228ee98953a884a25264177"
             ],
+            "index": "pypi",
+            "markers": "python_version >= '3.10'",
             "version": "==2025.5.10"
         },
         "liffile": {
@@ -723,6 +725,8 @@
                 "sha256:f3557272149e5b824eeeef09baefad0868d15db6c9009f5b2b9a47e9eb80437a",
                 "sha256:f41554cf7f32a2bce8f10dfdbb6ce59143d0af48e1d5af6c41c76c4aa59513d7"
             ],
+            "index": "pypi",
+            "markers": "python_version >= '3.10'",
             "version": "==2025.5.10"
         },
         "pyparsing": {
@@ -813,6 +817,8 @@
                 "sha256:5d434d7d32d60519c2deb0f5b9044ed91933d7f8b54d45e6e844684ffa276fc0",
                 "sha256:d6466c2fa3a534b130512abe59df4f969f51d0657175107597f59db51b44aeb6"
             ],
+            "index": "pypi",
+            "markers": "python_version >= '3.10'",
             "version": "==2025.5.10"
         },
         "six": {
@@ -830,6 +836,13 @@
             ],
             "markers": "python_version >= '3.10'",
             "version": "==2025.5.10"
+        },
+        "tiffile": {
+            "hashes": [
+                "sha256:0176e905517bb9b62c2064d7eda0c4f250360750069f1482435464cd4357b664"
+            ],
+            "index": "pypi",
+            "version": "==2018.10.18"
         },
         "tqdm": {
             "hashes": [
