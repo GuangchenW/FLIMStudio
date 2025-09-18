@@ -11,6 +11,7 @@ lfdfiles = "*"
 sdtfile = "*"
 ptufile = "*"
 tiffile = "*"
+napari = {extras = ["all"], version = "*"}
 
 [dev-packages]
 

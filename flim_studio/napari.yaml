@@ -1,0 +1,10 @@
+name: flim-studio
+display_name: FLIM Studio
+contributions:
+  commands:
+    - id: flim_studio.open_main_panel
+      title: FLIM Studio
+      python_name: flim_studio.ui.docks:open_main_panel
+  widgets:
+    - command: flim_studio.open_main_panel
+      display_name: FLIM Studio

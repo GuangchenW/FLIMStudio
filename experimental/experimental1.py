@@ -9,8 +9,8 @@ from phasorpy.plot import plot_phasor_image, plot_phasor
 
 import matplotlib.pyplot as plt
 
-image_path = "sample_data/Srijan.ptu"
-ref_path = "sample_data/fluorescein2.ptu"
+image_path = "samples/Srijan.ptu"
+ref_path = "samples/fluorescein2.ptu"
 
 signal = signal_from_ptu(image_path, frame=-1, channel=0)
 frequency = signal.attrs['frequency']

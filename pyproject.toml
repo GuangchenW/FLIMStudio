@@ -1,0 +1,31 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "flim-studio"
+version = "0.1.0"
+description = "FLIM Studio"
+authors = [
+	{name="Guangchen Wang", email="wangg4@tcd.ie"}
+]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+	"numpy",
+	"tifffile",
+	"scipy",
+	"napari",
+	"qtpy",
+	"phasorpy>=0.6"
+]
+
+[project.optional-dependencies]
+dev = [
+	"pytest",
+	"pytest-cov"
+]
+
+[tool.pytest.ini_options]
+adopts = "-ra -q"
+python_files = "test_*.py"
