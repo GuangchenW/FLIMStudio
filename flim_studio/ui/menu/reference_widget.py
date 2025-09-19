@@ -54,18 +54,11 @@ class ReferenceWidget(QWidget):
 		self.laser_freq.set_suffix("MHz")
 		self.laser_freq.set_value(80.0, as_default=True)
 
-		self.bin_width = AutoDoubleSpinBox()
-		self.bin_width.set_range(1e-7, 1e9)
-		self.bin_width.set_suffix("ns")
-		self.bin_width.set_decimals(6)
-		self.bin_width.set_step(0.001)
-
 		self.ref_lifetime = AutoDoubleSpinBox()
 		self.ref_lifetime.set_suffix("ns")
 		self.ref_lifetime.set_value(4, as_default=True)
 		# Make form
 		form.addRow("Laser freq.", self.laser_freq)
-		form.addRow("Bin width", self.bin_width)
 		form.addRow("Ref. lifetime", self.ref_lifetime)
 
 		layout.addWidget(self.btn_browse_ref)

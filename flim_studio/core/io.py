@@ -29,3 +29,4 @@ def load_signal(path:str|Path) -> Any:
 		return sig
 	except Exception as e:
 		raise IOError(f"Failed to load {p}: {e}") from e
+
