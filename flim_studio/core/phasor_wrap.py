@@ -3,7 +3,7 @@ import numpy as np
 from typing import Literal
 import phasorpy as ppy
 
-class PhasorError(Exception);
+class PhasorError(Exception):
 	pass
 
 def phasor_from_signal(
@@ -29,5 +29,9 @@ def tau_map_from_gs(
 	Single-exp lifetime estimation: tau = s/(omega(1-g)).
 	Returns tau in ns. 
 	"""
-	# TODO
-	pass
+	omega = 2 * np.pi * f_rep_hz
+	denom = omega * (1.0-g_YX)
+	tau_s = np.where(denom != 0, s_YX/denom, np.nan)
+	tau_s[(g_YX<=0)|(g_YX>=1)] = np.nan
+	tau_s[tau_s<0] = np.nan
+	return tau_s*1e-9 # s -> ns

@@ -1,0 +1,1 @@
+from .docks import open_main_panel

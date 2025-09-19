@@ -1,5 +1,5 @@
 from __future__ import annotations
-import numpu as np
+import numpy as np
 from typing import Tuple
 from scipy.ndimage import median_filter
 

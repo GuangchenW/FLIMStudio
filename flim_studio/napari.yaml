@@ -2,9 +2,9 @@ name: flim-studio
 display_name: FLIM Studio
 contributions:
   commands:
-    - id: flim_studio.open_main_panel
+    - id: flim-studio.open_main_panel
       title: FLIM Studio
-      python_name: flim_studio.ui.docks:open_main_panel
+      python_name: flim_studio.ui.docks:MainPanel
   widgets:
-    - command: flim_studio.open_main_panel
+    - command: flim-studio.open_main_panel
       display_name: FLIM Studio
