@@ -1,7 +1,9 @@
-from __future__ import annotations
 from pathlib import Path
 from typing import Any
-import phasorpy as ppy
+from phasorpy.io import (
+	signal_from_ptu,
+	signal_from_imspector_tiff
+)
 
 def load_signal(path:str|Path) -> Any:
 	"""Load a FLIM dataset via phasorpy IO.
@@ -18,12 +20,14 @@ def load_signal(path:str|Path) -> Any:
 	try:
 		if suffix in {".tif", ".tiff"}:
 			try:
-				sig = ppy.io.signal_from_imspector_tiff(str(p))
+				sig = signal_from_imspector_tiff(p)
 			except ValueError as e:
 				print(".tiff/.tif files has to be of ImSpector origin due to metadata requirements.")
 				raise
 		elif suffix == ".ptu":
-			sig = ppy.io.signal_from_ptu(str(p))
+			print("Here")
+			sig = signal_from_ptu(p, frame=-1)
+			print(sig)
 		else:
 			raise IOError(f"Unsupported extensions: {suffix}")
 		return sig

@@ -24,7 +24,7 @@ from ..core import (
 	apply_spatial_median
 )
 
-from .menu.reference_widget import ReferenceWidget
+from .menu.calibration_widget import CalibrationWidget
 
 class MainPanel(QWidget):
 	def __init__(self, viewer:Viewer) -> None:
@@ -43,5 +43,5 @@ class MainPanel(QWidget):
 	def _build(self) -> None:
 		layout = QVBoxLayout(self)
 
-		ref_widget = ReferenceWidget(self)
+		ref_widget = CalibrationWidget(self)
 		layout.addWidget(ref_widget)

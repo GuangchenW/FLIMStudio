@@ -42,7 +42,7 @@ class AutoDoubleSpinBox(QWidget):
 		layout.setSpacing(6)
 
 		self._spin = QDoubleSpinBox()
-		self._spin.setRange(0.0, 1e9)
+		self._spin.setRange(-1e9, 1e9)
 		self._spin.setSingleStep(0.01)
 		self._spin.setValue(0.0)
 
@@ -56,7 +56,8 @@ class AutoDoubleSpinBox(QWidget):
 		layout.addWidget(self._btn_reset, 0)
 
 		# Initial state = missing
-		self._apply_bg(utils.COLOR_FAILURE)
+		# TODO: This indication is perhaps a bit misleading?
+		#self._apply_bg(utils.COLOR_FAILURE)
 
 		# Signals
 		self._spin.valueChanged.connect(self._on_value_changed)
@@ -76,7 +77,7 @@ class AutoDoubleSpinBox(QWidget):
 		self._spin.setSuffix(suffix)
 
 	def value(self) -> float:
-		return float(self._spin.value())
+		return self._spin.value()
 
 	def set_value(self, value:float, as_default:bool=False) -> None:
 		"""
@@ -90,7 +91,8 @@ class AutoDoubleSpinBox(QWidget):
 			self._overridden = False
 			self._has_cached = False
 			self.reset_button.setEnabled(False)
-			self._apply_bg(utils.COLOR_FAILURE)
+			#self._apply_bg(utils.COLOR_FAILURE)
+			self._reset_bg()
 		else:
 			self.cached_value = value
 			self._overridden = False
@@ -120,3 +122,6 @@ class AutoDoubleSpinBox(QWidget):
 
 	def _apply_bg(self, color_hex: str) -> None:
 		self._spin.setStyleSheet(f"QDoubleSpinBox {{ background: {color_hex}; }}")
+
+	def _reset_bg(self) -> None:
+		self._spin.setStyleSheet("")
