@@ -1,5 +1,4 @@
 from typing import Dict, Optional
-from dataclasses import dataclass
 
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import (
@@ -17,7 +16,7 @@ from qtpy.QtWidgets import (
 )
 
 from flim_studio.core.calibration import Calibration
-from .auto_spin_box import AutoDoubleSpinBox
+from flim_studio.ui.component.auto_spin_box import AutoDoubleSpinBox
 from .. import utils
 
 
@@ -38,7 +37,7 @@ class CalibrationWidget(QWidget):
 		Return the phase and modulation values in the UI.
 		Note that the current value is used, not the detected/computed value.
 		"""
-		return self.calibration.get_calibration()
+		return (self.phase_shift.value(), self.modulation_shift.value())
 
 	## ------ UI ------ ##
 	def _build(self) -> None:
@@ -71,6 +70,7 @@ class CalibrationWidget(QWidget):
 		# Calibration button
 		self.btn_calibrate = QPushButton("Calibrate")
 		self.btn_calibrate.clicked.connect(self._on_calibration_btn_pressed)
+		self.btn_calibrate.setEnabled(False)
 		# Calibration parameters
 		self.phase_shift = AutoDoubleSpinBox()
 		self.modulation_shift = AutoDoubleSpinBox()
@@ -108,7 +108,8 @@ class CalibrationWidget(QWidget):
 
 		# Load reference file and update status to file path
 		try:
-			self.calibration.load(path)
+			channel = self.channel_selector.value()
+			self.calibration.load(path, int(channel))
 		except Exception as e:
 			self.le_ref_status.setText(f"Error: {type(e).__name__}")
 			return
@@ -120,6 +121,9 @@ class CalibrationWidget(QWidget):
 		freq = self.calibration.get_signal_attribute("frequency")
 		if not freq is None:
 			self.laser_freq.set_value(freq)
+
+		# Finally, enable the calibration button
+		self.btn_calibrate.setEnabled(True) 
 		
 	def _on_calibration_btn_pressed(self) -> None:
 		frequency = self.laser_freq.value()

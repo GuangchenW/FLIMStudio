@@ -5,7 +5,7 @@ from phasorpy.io import (
 	signal_from_imspector_tiff
 )
 
-def load_signal(path:str|Path) -> Any:
+def load_signal(path:str|Path, channel:int=0) -> Any:
 	"""Load a FLIM dataset via phasorpy IO.
 
 	Returns a signal (xarray.DataArray) if successful.
@@ -25,8 +25,7 @@ def load_signal(path:str|Path) -> Any:
 				print(".tiff/.tif files has to be of ImSpector origin due to metadata requirements.")
 				raise
 		elif suffix == ".ptu":
-			print("Here")
-			sig = signal_from_ptu(p, frame=-1)
+			sig = signal_from_ptu(p, frame=-1, channel=channel)
 			print(sig)
 		else:
 			raise IOError(f"Unsupported extensions: {suffix}")

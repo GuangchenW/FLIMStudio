@@ -24,13 +24,14 @@ from ..core import (
 	apply_spatial_median
 )
 
-from .menu.calibration_widget import CalibrationWidget
+from .phasor.calibration_widget import CalibrationWidget
+from .phasor.sample_manager_widget import SampleManagerWidget
 
-class MainPanel(QWidget):
+class PhasorAnalysis(QWidget):
 	def __init__(self, viewer:Viewer) -> None:
 		super().__init__()
 		self.viewer = viewer
-		self.setWindowTitle("FLIM Studio")
+		self.setWindowTitle("Phasor Analysis")
 		self.defaults = Defaults()
 		self._signal = None
 		self._phasor = None
@@ -41,7 +42,10 @@ class MainPanel(QWidget):
 		self._build()
 
 	def _build(self) -> None:
+		theme = self.viewer.theme
 		layout = QVBoxLayout(self)
 
-		ref_widget = CalibrationWidget(self)
-		layout.addWidget(ref_widget)
+		cal_widget = CalibrationWidget(self)
+		sample_manager_widget = SampleManagerWidget(theme, self)
+		layout.addWidget(cal_widget)
+		layout.addWidget(sample_manager_widget)

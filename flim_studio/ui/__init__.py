@@ -1,1 +1,1 @@
-from .docks import open_main_panel
+from .docks import open_phasor_analysis

@@ -16,11 +16,11 @@ class Calibration:
 		self.phase_zero: float = 0.0 # phi calibration
 		self.modulation_zero: float = 0.0 # m calibration
 
-	def load(self, path:str|Path) -> float|None:
+	def load(self, path:str|Path, channel:int=0) -> float|None:
 		"""
 		Load reference signals.
 		"""
-		self.signal = load_signal(path)
+		self.signal = load_signal(path, channel)
 		self.path = path
 
 	def calibrate(self, frequency, lifetime):

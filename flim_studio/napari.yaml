@@ -2,9 +2,9 @@ name: flim-studio
 display_name: FLIM Studio
 contributions:
   commands:
-    - id: flim-studio.open_main_panel
-      title: FLIM Studio
-      python_name: flim_studio.ui.docks:MainPanel
+    - id: flim-studio.open_phasor_analysis
+      title: Open Phasor Analysis
+      python_name: flim_studio.ui.app_shell:PhasorAnalysis
   widgets:
-    - command: flim-studio.open_main_panel
-      display_name: FLIM Studio
+    - command: flim-studio.open_phasor_analysis
+      display_name: Phasor Analysis
