@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from qtpy.QtWidgets import (
 	QWidget,
 	QHBoxLayout,
@@ -11,8 +13,7 @@ from qtpy.QtWidgets import (
 )
 from qtpy.QtCore import Qt
 import numpy as np
-import napari
-from napari.viewer import Viewer
+from napari import Viewer
 
 from ..config.defaults import Defaults
 from ..core import (
@@ -24,8 +25,10 @@ from ..core import (
 	apply_spatial_median
 )
 
+# HACK: Gotta clean up imports at some point
 from .phasor.calibration_widget import CalibrationWidget
 from .phasor.sample_manager_widget import SampleManagerWidget
+from .phasor.phasor_plot_widget import PhasorPlotWidget
 
 class PhasorAnalysis(QWidget):
 	def __init__(self, viewer:Viewer) -> None:
@@ -40,12 +43,24 @@ class PhasorAnalysis(QWidget):
 		self._s = None
 
 		self._build()
+		#self._test()
 
 	def _build(self) -> None:
 		theme = getattr(self.viewer, "theme", "dark")
 		layout = QVBoxLayout(self)
 
+		phasor_plot_widget = PhasorPlotWidget(self.viewer)
+		phasor_plot_dock = self.viewer.window.add_dock_widget(phasor_plot_widget, name="Phasor Plot", area="right")
+		phasor_plot_dock.setFloating(True)
+		phasor_plot_dock.setAllowedAreas(Qt.NoDockWidgetArea)
+
 		cal_widget = CalibrationWidget(self)
 		sample_manager_widget = SampleManagerWidget(self.viewer, cal_widget.get_calibration(), self)
+		sample_manager_widget.set_plot_widget(phasor_plot_widget)
 		layout.addWidget(cal_widget)
 		layout.addWidget(sample_manager_widget)
+
+
+	def _test(self) -> None:
+		points = [[1,1], [-1,1], [1,-1], [-1,-1]]
+		self.viewer.add_points(points)

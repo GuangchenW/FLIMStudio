@@ -1,12 +1,13 @@
 import os
 from pathlib import Path
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, TYPE_CHECKING
 from dataclasses import dataclass
 import xarray
 
 import numpy as np
 from phasorpy.phasor import phasor_from_signal
-from napari.viewer import Viewer
+if TYPE_CHECKING:
+	import napari
 
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtGui import QIcon
@@ -28,12 +29,14 @@ from qtpy.QtWidgets import (
 
 from flim_studio.core.calibration import Calibration
 from flim_studio.core.io import load_signal
+if TYPE_CHECKING:
+	from .phasor_plot_widget import PhasorPlotWidget
 
 @dataclass
 class Dataset:
 	path: str|Path
 	channel: int
-	signal: xarray.DataArray # xarray
+	signal: xarray.DataArray # phasorpy signal
 	mean: Optional[np.ndarray] = None # Average signal
 	real: Optional[np.ndarray] = None # Real phasor coords
 	imag: Optional[np.ndarray] = None # Imaginary phasor coords
@@ -45,7 +48,7 @@ class DatasetRow(QWidget):
 		self,
 		name:str,
 		dataset:Dataset,
-		viewer:Viewer,
+		viewer:"napari.Viewer",
 		parent:Optional[QWidget]=None
 	):
 		super().__init__(parent)
@@ -54,6 +57,7 @@ class DatasetRow(QWidget):
 		self.viewer = viewer
 		self._list: QListWidget|None = None
 		self._item: QListWidgetItem|None = None
+		self._plot_widget: "PhasorPlotWidget|None" = None
 		self._build()
 
 	## ------ UI ------ ##
@@ -118,6 +122,9 @@ class DatasetRow(QWidget):
 		self._list = listw
 		self._item = item
 
+	def set_plot_widget(self, widget:"PhasorPlotWidget") -> None:
+		self._plot_widget = widget
+
 	def compute_phasor(self, calibration:Optional[Calibration]=None) -> None:
 		"""
 		Compute the phasor coordinate of dataset.
@@ -126,12 +133,13 @@ class DatasetRow(QWidget):
 		self.dataset.mean, self.dataset.real, self.dataset.imag = phasor_from_signal(self.dataset.signal, axis='H')
 		if not calibration is None:
 			self.dataset.real, self.dataset.imag = calibration.compute_calibrated_phasor(self.dataset.real, self.dataset.imag)
+		print(self.dataset.real.shape)
 		self.btn_show.setEnabled(True)
 
 	## ------ Internal ------ ##
 	def _on_removal(self) -> None:
 		if not (self._list and self._item):
-			raise OSError("Something is very wrong")
+			raise RuntimeError("Something is very wrong")
 			return
 		r = self._list.row(self._item) # Get the row index
 		self._list.takeItem(r) # Remove from list
@@ -139,21 +147,29 @@ class DatasetRow(QWidget):
 		# TODO: Remove the associated layers
 
 	def _on_show(self) -> None:
+		if self._plot_widget is None:
+			raise RuntimeError("PhasorPlotWidget is not set!")
 		if self.btn_show.isChecked():
-			# Show image layers
-			print("Checked")
+			# Show
+			self._plot_widget.add_points(self.name, self.dataset.real, self.dataset.imag)
 		else:
-			# Show image layers
-			print("Unchecked")
+			# Hide
+			self._plot_widget.remove_points(self.name)
 
 class SampleManagerWidget(QWidget):
-	def __init__(self, viewer:Viewer, calibration:Calibration, parent:Optional[QWidget]=None):
+	def __init__(
+		self,
+		viewer: "napari.viewer.Viewer",
+		calibration: Calibration,
+		parent: Optional[QWidget]=None,
+	):
 		# NOTE: The theme is passed around because it is needed for determining 
 		# the icon to use depending on lihgt and dark theme. Maybe it's better 
 		# to pass the viewer around instead, but for now this will do.
 		super().__init__(parent)
 		self.viewer = viewer
 		self.calibration = calibration
+		self.plot_widget: "PhasorPlotWidget" = None
 		self._build()
 
 	## ------ UI ------ ##
@@ -181,14 +197,18 @@ class SampleManagerWidget(QWidget):
 		self.dataset_list = QListWidget()
 		self.dataset_list.setSelectionMode(self.dataset_list.ExtendedSelection)
 		self.dataset_list.setSpacing(0)
-		self.dataset_list.model().rowsInserted.connect(self._on_list_item_added)
-		self.dataset_list.model().rowsRemoved.connect(self._on_list_item_removed)
+		self.dataset_list.itemSelectionChanged.connect(self._on_selection_changed)
 
 		layout.addLayout(load_row)
 		layout.addWidget(self.btn_compute)
 		layout.addWidget(self.dataset_list)
 
 	## ------ Public API ------ ##
+	def set_plot_widget(self, widget:"PhasorPlotWidget") -> None:
+		# HACK: Ah this dependency setup is hacky, but I think 
+		# it would be worse trying to hook up the signals.
+		self.plot_widget = widget
+
 	def get_selected_rows(self) -> List[DatasetRow]:
 		selected = self.dataset_list.selectedItems()
 		return [self.dataset_list.itemWidget(item) for item in selected]
@@ -213,17 +233,13 @@ class SampleManagerWidget(QWidget):
 			item = QListWidgetItem(self.dataset_list)
 			row = DatasetRow(f"{name} (channel {selected_channel})", ds, self.viewer)
 			row.bind(self.dataset_list, item)
-			# TODO: row.show_clicked.connect()
+			row.set_plot_widget(self.plot_widget)
 			item.setSizeHint(row.sizeHint())
 			self.dataset_list.addItem(item)
 			self.dataset_list.setItemWidget(item, row)
 	
-	def _on_list_item_added(self) -> None:
-		# It's guaranteed that when this happens the list is non-empty
-		self.btn_compute.setEnabled(True)
-
-	def _on_list_item_removed(self) -> None:
-		self.btn_compute.setEnabled(self.dataset_list.count()>0)
+	def _on_selection_changed(self) -> None:
+		self.btn_compute.setEnabled(len(self.dataset_list.selectedItems())>0)
 
 	def _on_compute_selected(self) -> None:
 		rows = self.get_selected_rows()
