@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import xarray
 
 import numpy as np
+from phasorpy.phasor import phasor_from_signal
 from napari.viewer import Viewer
 
 from qtpy.QtCore import Qt, Signal
@@ -25,6 +26,7 @@ from qtpy.QtWidgets import (
 	QStyle
 )
 
+from flim_studio.core.calibration import Calibration
 from flim_studio.core.io import load_signal
 
 @dataclass
@@ -32,10 +34,11 @@ class Dataset:
 	path: str|Path
 	channel: int
 	signal: xarray.DataArray # xarray
+	mean: Optional[np.ndarray] = None # Average signal
 	real: Optional[np.ndarray] = None # Real phasor coords
 	imag: Optional[np.ndarray] = None # Imaginary phasor coords
 
-class _DatasetRow(QWidget):
+class DatasetRow(QWidget):
 	show_clicked = Signal()
 
 	def __init__(
@@ -53,12 +56,13 @@ class _DatasetRow(QWidget):
 		self._item: QListWidgetItem|None = None
 		self._build()
 
+	## ------ UI ------ ##
 	def _build(self) -> None:
 		layout = QHBoxLayout(self)
 		self.label = QLabel(self.name)
-		self.btn_delete = self.make_delete_button(self.viewer)
+		self.btn_delete = self._make_delete_button(self.viewer)
 		self.btn_delete.clicked.connect(self._on_removal)
-		self.btn_show = self.make_show_button(self.viewer)
+		self.btn_show = self._make_show_button(self.viewer)
 		self.btn_show.clicked.connect(self._on_show)
 		self.btn_show.setEnabled(False)
 		# Since I am too lazy to implement a confirm delete dialog,
@@ -67,7 +71,7 @@ class _DatasetRow(QWidget):
 		layout.addWidget(self.label, 1)
 		layout.addWidget(self.btn_show, 0)
 
-	def make_delete_button(self, viewer) -> QPushButton:
+	def _make_delete_button(self, viewer) -> QPushButton:
 		btn = QPushButton()
 
 		def apply_icons(*_):
@@ -82,7 +86,7 @@ class _DatasetRow(QWidget):
 		viewer.events.theme.connect(apply_icons)
 		return btn
 
-	def make_show_button(self, viewer) -> QPushButton:
+	def _make_show_button(self, viewer) -> QPushButton:
 		btn = QPushButton()
 
 		def apply_icons(*_):
@@ -106,6 +110,7 @@ class _DatasetRow(QWidget):
 		viewer.events.theme.connect(apply_icons)
 		return btn
 
+	## ------ Public API ------ ##
 	def bind(self, listw:QListWidget, item:QListWidgetItem) -> None:
 		"""
 		Bind the associated list widget item and parent list so removal is easier.
@@ -113,6 +118,17 @@ class _DatasetRow(QWidget):
 		self._list = listw
 		self._item = item
 
+	def compute_phasor(self, calibration:Optional[Calibration]=None) -> None:
+		"""
+		Compute the phasor coordinate of dataset.
+		If calibration is provided, calibrate the phasor coordinated accordingly. 
+		"""
+		self.dataset.mean, self.dataset.real, self.dataset.imag = phasor_from_signal(self.dataset.signal, axis='H')
+		if not calibration is None:
+			self.dataset.real, self.dataset.imag = calibration.compute_calibrated_phasor(self.dataset.real, self.dataset.imag)
+		self.btn_show.setEnabled(True)
+
+	## ------ Internal ------ ##
 	def _on_removal(self) -> None:
 		if not (self._list and self._item):
 			raise OSError("Something is very wrong")
@@ -131,12 +147,13 @@ class _DatasetRow(QWidget):
 			print("Unchecked")
 
 class SampleManagerWidget(QWidget):
-	def __init__(self, viewer:Viewer, parent:Optional[QWidget]=None):
+	def __init__(self, viewer:Viewer, calibration:Calibration, parent:Optional[QWidget]=None):
 		# NOTE: The theme is passed around because it is needed for determining 
 		# the icon to use depending on lihgt and dark theme. Maybe it's better 
 		# to pass the viewer around instead, but for now this will do.
 		super().__init__(parent)
 		self.viewer = viewer
+		self.calibration = calibration
 		self._build()
 
 	## ------ UI ------ ##
@@ -157,8 +174,8 @@ class SampleManagerWidget(QWidget):
 
 		# Control
 		self.btn_compute = QPushButton("Calculate phasor for selected")
+		self.btn_compute.clicked.connect(self._on_compute_selected)
 		self.btn_compute.setEnabled(False)
-		# TODO: set up connection 
 
 		# Dataset list
 		self.dataset_list = QListWidget()
@@ -172,9 +189,12 @@ class SampleManagerWidget(QWidget):
 		layout.addWidget(self.dataset_list)
 
 	## ------ Public API ------ ##
-	def get_selected_datasets(self) -> List[Dataset]:
+	def get_selected_rows(self) -> List[DatasetRow]:
 		selected = self.dataset_list.selectedItems()
-		return [self.dataset_list.itemWidget(item).dataset for item in selected]
+		return [self.dataset_list.itemWidget(item) for item in selected]
+
+	def get_selected_datasets(self) -> List[Dataset]:
+		return [row.dataset for row in self.get_selected_rows()]
 
 	## ------ Internal ------ ##
 	def _on_browse_file(self) -> None:
@@ -191,7 +211,7 @@ class SampleManagerWidget(QWidget):
 			ds = Dataset(path=path, channel=selected_channel, signal=signal)
 
 			item = QListWidgetItem(self.dataset_list)
-			row = _DatasetRow(f"{name} (channel {selected_channel})", ds, self.viewer)
+			row = DatasetRow(f"{name} (channel {selected_channel})", ds, self.viewer)
 			row.bind(self.dataset_list, item)
 			# TODO: row.show_clicked.connect()
 			item.setSizeHint(row.sizeHint())
@@ -206,5 +226,7 @@ class SampleManagerWidget(QWidget):
 		self.btn_compute.setEnabled(self.dataset_list.count()>0)
 
 	def _on_compute_selected(self) -> None:
-		# TODO
-		pass
+		rows = self.get_selected_rows()
+		for r in rows:
+			r.compute_phasor(self.calibration)
+		

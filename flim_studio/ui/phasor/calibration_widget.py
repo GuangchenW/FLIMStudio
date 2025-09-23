@@ -34,10 +34,9 @@ class CalibrationWidget(QWidget):
 	## ------ Public API ------ ##
 	def get_calibration(self):
 		"""
-		Return the phase and modulation values in the UI.
-		Note that the current value is used, not the detected/computed value.
+		Return the Calibration object
 		"""
-		return (self.phase_shift.value(), self.modulation_shift.value())
+		return self.calibration
 
 	## ------ UI ------ ##
 	def _build(self) -> None:

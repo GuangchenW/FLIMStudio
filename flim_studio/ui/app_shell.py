@@ -46,6 +46,6 @@ class PhasorAnalysis(QWidget):
 		layout = QVBoxLayout(self)
 
 		cal_widget = CalibrationWidget(self)
-		sample_manager_widget = SampleManagerWidget(self.viewer, self)
+		sample_manager_widget = SampleManagerWidget(self.viewer, cal_widget.get_calibration(), self)
 		layout.addWidget(cal_widget)
 		layout.addWidget(sample_manager_widget)
