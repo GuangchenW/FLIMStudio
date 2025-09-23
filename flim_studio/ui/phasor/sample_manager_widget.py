@@ -37,19 +37,18 @@ class Dataset:
 
 class _DatasetRow(QWidget):
 	show_clicked = Signal()
-	request_removal = Signal()
 
 	def __init__(
 		self,
 		name:str,
 		dataset:Dataset,
-		theme:str,
+		viewer:Viewer,
 		parent:Optional[QWidget]=None
 	):
 		super().__init__(parent)
 		self.name = name
 		self.dataset = dataset
-		self.theme = theme
+		self.viewer = viewer
 		self._list: QListWidget|None = None
 		self._item: QListWidgetItem|None = None
 		self._build()
@@ -57,19 +56,60 @@ class _DatasetRow(QWidget):
 	def _build(self) -> None:
 		layout = QHBoxLayout(self)
 		self.label = QLabel(self.name)
-		self.btn_delete = QPushButton()
-		self.btn_delete.setIcon(QIcon(f"theme_{self.theme}:/delete.svg"))
-		self.btn_delete.setToolTip("Unload and remove dataset")
+		self.btn_delete = self.make_delete_button(self.viewer)
 		self.btn_delete.clicked.connect(self._on_removal)
-		self.btn_show = QPushButton()
-		self.btn_show.setIcon(QIcon(f"theme_{self.theme}:/visibility_off.svg"))
-		self.btn_show.setToolTip("Display image and phasor scatter")
-		self.btn_show.clicked.connect(self.show_clicked.emit)
-		layout.addWidget(self.label, 1)
+		self.btn_show = self.make_show_button(self.viewer)
+		self.btn_show.clicked.connect(self._on_show)
+		self.btn_show.setEnabled(False)
+		# Since I am too lazy to implement a confirm delete dialog,
+		# put label in the middle to prevent missclick of buttons
 		layout.addWidget(self.btn_delete, 0)
+		layout.addWidget(self.label, 1)
 		layout.addWidget(self.btn_show, 0)
 
+	def make_delete_button(self, viewer) -> QPushButton:
+		btn = QPushButton()
+
+		def apply_icons(*_):
+			theme = getattr(viewer, "theme", "dark")
+			icon = QIcon()
+			icon.addFile(f"theme_{theme}:/delete.svg", mode=QIcon.Normal, state=QIcon.Off)
+			btn.setIcon(icon)
+
+		apply_icons() # Initialize the icons
+		btn.setToolTip("Unload and remove dataset")
+		# Keep in sync with theme
+		viewer.events.theme.connect(apply_icons)
+		return btn
+
+	def make_show_button(self, viewer) -> QPushButton:
+		btn = QPushButton()
+
+		def apply_icons(*_):
+			theme = getattr(viewer, "theme", "dark")
+			icon = QIcon()
+			# Enabled icon
+			icon.addFile(f"theme_{theme}:/visibility.svg", mode=QIcon.Normal, state=QIcon.Off)
+			icon.addFile(f"theme_{theme}:/visibility_off.svg", mode=QIcon.Disabled, state=QIcon.Off)
+			btn.setIcon(icon)
+
+		btn.setCheckable(True)
+		apply_icons() # Initialize the icons
+		# HACK: Showing tooltip covering both enabled and disabled state.
+		# Better to make tooltips separate but I'm lazy.
+		btn.setToolTip("""
+			Show photon count average and phasor scatter.\n
+			Disabled if the phasor has been calculated yet.
+		""")
+		btn.setAttribute(Qt.WA_AlwaysShowToolTips, True)
+		# Keep in sync with theme
+		viewer.events.theme.connect(apply_icons)
+		return btn
+
 	def bind(self, listw:QListWidget, item:QListWidgetItem) -> None:
+		"""
+		Bind the associated list widget item and parent list so removal is easier.
+		"""
 		self._list = listw
 		self._item = item
 
@@ -77,18 +117,26 @@ class _DatasetRow(QWidget):
 		if not (self._list and self._item):
 			raise OSError("Something is very wrong")
 			return
-		r = self._list.row(self._item)
-		self._list.takeItem(r)
-		self.deleteLater()
+		r = self._list.row(self._item) # Get the row index
+		self._list.takeItem(r) # Remove from list
+		self.deleteLater() # Delete the widget; let gc handle the list item
+		# TODO: Remove the associated layers
 
+	def _on_show(self) -> None:
+		if self.btn_show.isChecked():
+			# Show image layers
+			print("Checked")
+		else:
+			# Show image layers
+			print("Unchecked")
 
 class SampleManagerWidget(QWidget):
-	def __init__(self, theme:str, parent:Optional[QWidget]=None):
+	def __init__(self, viewer:Viewer, parent:Optional[QWidget]=None):
 		# NOTE: The theme is passed around because it is needed for determining 
 		# the icon to use depending on lihgt and dark theme. Maybe it's better 
 		# to pass the viewer around instead, but for now this will do.
 		super().__init__(parent)
-		self.theme = theme
+		self.viewer = viewer
 		self._build()
 
 	## ------ UI ------ ##
@@ -109,15 +157,24 @@ class SampleManagerWidget(QWidget):
 
 		# Control
 		self.btn_compute = QPushButton("Calculate phasor for selected")
+		self.btn_compute.setEnabled(False)
+		# TODO: set up connection 
 
 		# Dataset list
 		self.dataset_list = QListWidget()
 		self.dataset_list.setSelectionMode(self.dataset_list.ExtendedSelection)
 		self.dataset_list.setSpacing(0)
+		self.dataset_list.model().rowsInserted.connect(self._on_list_item_added)
+		self.dataset_list.model().rowsRemoved.connect(self._on_list_item_removed)
 
 		layout.addLayout(load_row)
 		layout.addWidget(self.btn_compute)
 		layout.addWidget(self.dataset_list)
+
+	## ------ Public API ------ ##
+	def get_selected_datasets(self) -> List[Dataset]:
+		selected = self.dataset_list.selectedItems()
+		return [self.dataset_list.itemWidget(item).dataset for item in selected]
 
 	## ------ Internal ------ ##
 	def _on_browse_file(self) -> None:
@@ -134,17 +191,20 @@ class SampleManagerWidget(QWidget):
 			ds = Dataset(path=path, channel=selected_channel, signal=signal)
 
 			item = QListWidgetItem(self.dataset_list)
-			row = _DatasetRow(f"{name} (channel {selected_channel})", ds, self.theme)
+			row = _DatasetRow(f"{name} (channel {selected_channel})", ds, self.viewer)
 			row.bind(self.dataset_list, item)
 			# TODO: row.show_clicked.connect()
 			item.setSizeHint(row.sizeHint())
 			self.dataset_list.addItem(item)
 			self.dataset_list.setItemWidget(item, row)
 	
+	def _on_list_item_added(self) -> None:
+		# It's guaranteed that when this happens the list is non-empty
+		self.btn_compute.setEnabled(True)
+
+	def _on_list_item_removed(self) -> None:
+		self.btn_compute.setEnabled(self.dataset_list.count()>0)
+
 	def _on_compute_selected(self) -> None:
 		# TODO
 		pass
-
-	def selected_datasets(self) -> List[Dataset]:
-		selected = self.dataset_list.selectedItems()
-		return [item.dataset for item in selected]

@@ -74,6 +74,7 @@ class CalibrationWidget(QWidget):
 		# Calibration parameters
 		self.phase_shift = AutoDoubleSpinBox()
 		self.modulation_shift = AutoDoubleSpinBox()
+		self.modulation_shift.set_value(1.0, as_default=True)
 		# Make form
 		row = QHBoxLayout()
 		row.addWidget(self.le_channel)

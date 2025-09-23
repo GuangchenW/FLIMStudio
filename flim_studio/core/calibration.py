@@ -1,6 +1,6 @@
 from pathlib import Path
 import numpy as np
-from phasorpy.phasor import phasor_from_signal, phasor_center
+from phasorpy.phasor import phasor_from_signal, phasor_center, phasor_transform
 from phasorpy.lifetime import phasor_from_lifetime, polar_from_reference_phasor
 
 from .io import load_signal
@@ -14,7 +14,7 @@ class Calibration:
 		self.ref_imag = None # Reference signal imaginary component (s)
 
 		self.phase_zero: float = 0.0 # phi calibration
-		self.modulation_zero: float = 0.0 # m calibration
+		self.modulation_zero: float = 1.0 # m calibration
 
 	def load(self, path:str|Path, channel:int=0) -> float|None:
 		"""
@@ -41,6 +41,13 @@ class Calibration:
 				lifetime,
 			),
 		)
+
+	def compute_calibrated_phasor(self, real, imag):
+		"""
+		Transform the given phasor coordinates using self.phase_zero and self.modulation_zero.
+		Returns the transformed real and imaginary components.
+		"""
+		return phasor_transform(real, imag, self.phase_zero, self.modulation_zero)
 
 	def get_signal_attribute(self, attr:str):
 		"""
