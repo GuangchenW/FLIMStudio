@@ -247,7 +247,7 @@ class SampleManagerWidget(QWidget):
 		datasets = [ds for ds in datasets if ds.mean is not None]
 		if len(datasets) <= 0: return
 		# Make plot widget
-		phasor_plot_widget = PhasorPlotWidget(self.viewer, datasets)
+		phasor_plot_widget = PhasorPlotWidget(self.viewer, datasets, frequency=self.calibration.frequency)
 		# NOTE: For some reason, area="right" leads to layout problems of the canvas. I'm unsure why.
 		phasor_plot_dock = self.viewer.window.add_dock_widget(phasor_plot_widget, name="Phasor Plot", area="bottom")
 		phasor_plot_dock.setFloating(True)

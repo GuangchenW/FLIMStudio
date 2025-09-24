@@ -1,8 +1,9 @@
-from typing import Dict, Optional, List, TYPE_CHECKING
+from typing import Dict, Optional, List, Literal, TYPE_CHECKING
 from dataclasses import dataclass
 
 import numpy as np
 from phasorpy.plot import PhasorPlot
+from phasorpy.phasor import phasor_filter_median
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
 
@@ -35,16 +36,18 @@ class PhasorPlotWidget(QWidget):
 	"""
 	def __init__(
 		self, 
-		viewer:"napari.Viewer",
-		datasets:List["Dataset"],
-		dpi:int = 120, 
-		fig_pixels:int = 480, 
-		parent:Optional[QWidget] = None
+		viewer: "napari.Viewer",
+		datasets: List["Dataset"],
+		dpi: int = 120, 
+		fig_pixels: int = 480,
+		frequency: float|None = None,
+		parent: QWidget|None = None,
 	) -> None:
 		super().__init__(parent)
 		self.viewer = viewer
 		self.dpi = dpi
 		self.fig_pixels = fig_pixels
+		self.frequency: float|None = frequency
 
 		# --- Internal state --- #
 		self._points:Dict[str, any] = {}
@@ -90,7 +93,7 @@ class PhasorPlotWidget(QWidget):
 		ctrl_grid.addWidget(self.repetition, 2, 4)
 		# Last row: Draw button
 		self.btn_draw = QPushButton("Draw")
-		# TODO: Connect clicked signal
+		self.btn_draw.clicked.connect(self.draw_selected)
 		ctrl_grid.addWidget(self.btn_draw, 3, 1, 1, 4)
 
 		# --- Right side: dataset management
@@ -100,6 +103,9 @@ class PhasorPlotWidget(QWidget):
 		for ds in self._datasets:
 			list_item = QListWidgetItem(f"{ds.name} (channel {ds.channel})")
 			self.dataset_list.addItem(list_item)
+			# We want all datasets to be selected at the start
+			# because we will immediately plot them
+			list_item.setSelected(True)
 		ctrl_grid.addWidget(self.dataset_list, 1, 5, 3, 1)
 
 		# --- Phasor plot and roi management --- #
@@ -117,18 +123,86 @@ class PhasorPlotWidget(QWidget):
 		self._ax = self._fig.add_subplot(111)
 		# Make PhasorPlot object and hand it control over the axes
 		self._pp = PhasorPlot(ax=self._ax) # WARNING: Do we need the frequency argument here?
-		self._pp.semicircle()
+		self._draw_semicircle()
 
 		left.addWidget(self._toolbar)
 		left.addWidget(self._canvas, stretch=1)
 
 		# Right: Cirlular ROI management panel
-		right = QVBoxLayout()
+		#right = QVBoxLayout()
 		#bottom.addLayout(right, stretch=0)
 
 		# TODO: We need to think about how to arrange this ROI management panel.
 
 	## ------ Public API ------ ##
+	def clear_plot(self) -> None:
+		"""
+		Reset the plot.
+		"""
+		# This is nasty, but I don't think there is a more reliable way?
+		xlim = self._ax.get_xlim()
+		ylim = self._ax.get_ylim()
+		xscale = self._ax.get_xscale()
+		yscale = self._ax.get_yscale()
+		aspect = self._ax.get_aspect()
+		self._ax.cla()
+		self._ax.set_xlim(xlim)
+		self._ax.set_ylim(ylim)
+		self._ax.set_xscale(xscale)
+		self._ax.set_yscale(yscale)
+		self._ax.set_aspect(aspect)
+
+		self._ax.set_title("Phasor Plot")
+		self._ax.set_xlabel("G, real")
+		self._ax.set_ylabel("S, imag")
+		self._draw_semicircle()
+		self._canvas.draw_idle()
+
+	def draw_selected(self) -> None:
+		self.clear_plot() # Clear plot first
+
+		min_count = self.min_count.value()
+		max_count = self.max_count.value()
+		kernel_size = self.kernel_size.value()
+		repetition = self.repetition.value()
+
+		# Get selected row indices
+		indices = [self.dataset_list.row(item) for item in self.dataset_list.selectedItems()]
+
+		for idx in indices:
+			self.draw_dataset(
+				self._datasets[idx],
+				min_count,
+				max_count,
+				kernel_size,
+				repetition
+			)
+
+		self._canvas.draw_idle()
+
+	def draw_dataset(
+		self,
+		dataset: "Dataset",
+		min_photon_count: int = 0,
+		max_photon_count: int = int(1e9),
+		median_filter_kernel_size: int = 3,
+		median_filter_repetition: int = 0,
+		mode:Literal["plot","hist2d","contour"] = "hist2d",
+		color = None
+	) -> None:
+		# TODO: Finish implementation
+		m = dataset.mean; g = dataset.real; s = dataset.imag
+		if median_filter_repetition > 0:
+			m,g,s = phasor_filter_median(m, g, s, repeat=median_filter_repetition, size=median_filter_kernel_size)
+		print(np.max(m))
+		match mode:
+			case "plot":
+				pass
+			case "hist2d":
+				self._pp.hist2d(g, s)
+			case "contour":
+				pass
+
 	def add_points(self, name:str, g:np.ndarray, s:np.ndarray, **scatter_kwargs) -> None:
 		""" Add or replace a named set of phasor points."""
 		if name in self._points:
@@ -167,3 +241,7 @@ class PhasorPlotWidget(QWidget):
 		for name in self._points.keys():
 			self.remove_points(name, False)
 		self._canvas.draw_idle()
+
+	## ------ Internal ------ ##
+	def _draw_semicircle(self) -> None:
+		self._pp.semicircle(frequency=self.frequency, lifetime=[0.5,1,2,4,8])

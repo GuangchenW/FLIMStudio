@@ -13,6 +13,9 @@ class Calibration:
 		self.ref_real = None # Reference signal real component (g)
 		self.ref_imag = None # Reference signal imaginary component (s)
 
+		# Laser frequency of used for calibration
+		# (not necessarily from metadata, may be set by user)
+		self.frequency: float|None = None
 		self.phase_zero: float = 0.0 # phi calibration
 		self.modulation_zero: float = 1.0 # m calibration
 
@@ -26,6 +29,8 @@ class Calibration:
 	def calibrate(self, frequency, lifetime):
 		if self.signal is None:
 			raise ValueError("Reference signal is None")
+		# Store frequency used for calibration
+		self.frequency = frequency
 		# Compute phasor coordinates
 		self.ref_mean, self.ref_real, self.ref_imag = phasor_from_signal(self.signal, axis='H')
 
