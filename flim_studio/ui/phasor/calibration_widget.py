@@ -43,7 +43,9 @@ class CalibrationWidget(QWidget):
 		layout = QVBoxLayout(self)
 
 		box = QGroupBox("Reference (Calibration)", self)
-		form = QFormLayout(box)
+		form = QFormLayout()
+		form.setContentsMargins(5,15,5,5)
+		box.setLayout(form)
 
 		# Channel selection
 		# This must be determined by the user before loading the file

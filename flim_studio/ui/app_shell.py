@@ -49,14 +49,8 @@ class PhasorAnalysis(QWidget):
 		theme = getattr(self.viewer, "theme", "dark")
 		layout = QVBoxLayout(self)
 
-		phasor_plot_widget = PhasorPlotWidget(self.viewer)
-		phasor_plot_dock = self.viewer.window.add_dock_widget(phasor_plot_widget, name="Phasor Plot", area="right")
-		phasor_plot_dock.setFloating(True)
-		phasor_plot_dock.setAllowedAreas(Qt.NoDockWidgetArea)
-
 		cal_widget = CalibrationWidget(self)
 		sample_manager_widget = SampleManagerWidget(self.viewer, cal_widget.get_calibration(), self)
-		sample_manager_widget.set_plot_widget(phasor_plot_widget)
 		layout.addWidget(cal_widget)
 		layout.addWidget(sample_manager_widget)
 

@@ -29,12 +29,12 @@ from qtpy.QtWidgets import (
 
 from flim_studio.core.calibration import Calibration
 from flim_studio.core.io import load_signal
-if TYPE_CHECKING:
-	from .phasor_plot_widget import PhasorPlotWidget
+from .phasor_plot_widget import PhasorPlotWidget
 
 @dataclass
 class Dataset:
 	path: str|Path
+	name:str
 	channel: int
 	signal: xarray.DataArray # phasorpy signal
 	mean: Optional[np.ndarray] = None # Average signal
@@ -57,7 +57,6 @@ class DatasetRow(QWidget):
 		self.viewer = viewer
 		self._list: QListWidget|None = None
 		self._item: QListWidgetItem|None = None
-		self._plot_widget: "PhasorPlotWidget|None" = None
 		self._build()
 
 	## ------ UI ------ ##
@@ -122,9 +121,6 @@ class DatasetRow(QWidget):
 		self._list = listw
 		self._item = item
 
-	def set_plot_widget(self, widget:"PhasorPlotWidget") -> None:
-		self._plot_widget = widget
-
 	def compute_phasor(self, calibration:Optional[Calibration]=None) -> None:
 		"""
 		Compute the phasor coordinate of dataset.
@@ -133,7 +129,6 @@ class DatasetRow(QWidget):
 		self.dataset.mean, self.dataset.real, self.dataset.imag = phasor_from_signal(self.dataset.signal, axis='H')
 		if not calibration is None:
 			self.dataset.real, self.dataset.imag = calibration.compute_calibrated_phasor(self.dataset.real, self.dataset.imag)
-		print(self.dataset.real.shape)
 		self.btn_show.setEnabled(True)
 
 	## ------ Internal ------ ##
@@ -147,14 +142,12 @@ class DatasetRow(QWidget):
 		# TODO: Remove the associated layers
 
 	def _on_show(self) -> None:
-		if self._plot_widget is None:
-			raise RuntimeError("PhasorPlotWidget is not set!")
 		if self.btn_show.isChecked():
 			# Show
-			self._plot_widget.add_points(self.name, self.dataset.real, self.dataset.imag)
+			pass
 		else:
 			# Hide
-			self._plot_widget.remove_points(self.name)
+			pass
 
 class SampleManagerWidget(QWidget):
 	def __init__(
@@ -169,12 +162,11 @@ class SampleManagerWidget(QWidget):
 		super().__init__(parent)
 		self.viewer = viewer
 		self.calibration = calibration
-		self.plot_widget: "PhasorPlotWidget" = None
 		self._build()
 
 	## ------ UI ------ ##
 	def _build(self) -> None:
-		layout = QVBoxLayout(self)
+		root = QVBoxLayout(self)
 
 		# File loading
 		load_row = QHBoxLayout()
@@ -188,10 +180,16 @@ class SampleManagerWidget(QWidget):
 		load_row.addWidget(self.channel_selector)
 		load_row.addWidget(self.btn_browse_file)
 
-		# Control
-		self.btn_compute = QPushButton("Calculate phasor for selected")
+		# Control buttons
+		self.btn_compute = QPushButton("Calculate selected")
 		self.btn_compute.clicked.connect(self._on_compute_selected)
 		self.btn_compute.setEnabled(False)
+		self.btn_visualize = QPushButton("Visualize selected")
+		self.btn_visualize.clicked.connect(self._on_visualize_selected)
+		self.btn_visualize.setEnabled(False)
+		button_row = QHBoxLayout()
+		button_row.addWidget(self.btn_compute)
+		button_row.addWidget(self.btn_visualize)
 
 		# Dataset list
 		self.dataset_list = QListWidget()
@@ -199,16 +197,11 @@ class SampleManagerWidget(QWidget):
 		self.dataset_list.setSpacing(0)
 		self.dataset_list.itemSelectionChanged.connect(self._on_selection_changed)
 
-		layout.addLayout(load_row)
-		layout.addWidget(self.btn_compute)
-		layout.addWidget(self.dataset_list)
+		root.addLayout(load_row)
+		root.addLayout(button_row)
+		root.addWidget(self.dataset_list)
 
 	## ------ Public API ------ ##
-	def set_plot_widget(self, widget:"PhasorPlotWidget") -> None:
-		# HACK: Ah this dependency setup is hacky, but I think 
-		# it would be worse trying to hook up the signals.
-		self.plot_widget = widget
-
 	def get_selected_rows(self) -> List[DatasetRow]:
 		selected = self.dataset_list.selectedItems()
 		return [self.dataset_list.itemWidget(item) for item in selected]
@@ -227,22 +220,35 @@ class SampleManagerWidget(QWidget):
 		selected_channel = self.channel_selector.value()
 		for path in paths:
 			name = os.path.basename(path)
-			signal = load_signal(path, selected_channel)
-			ds = Dataset(path=path, channel=selected_channel, signal=signal)
+			# TODO: Do we need to handle channel exception here? Or leave it to napari
+			signal = load_signal(path, selected_channel) # Process selected channel into signal
+			ds = Dataset(path=path, name=name, channel=selected_channel, signal=signal)
 
 			item = QListWidgetItem(self.dataset_list)
 			row = DatasetRow(f"{name} (channel {selected_channel})", ds, self.viewer)
-			row.bind(self.dataset_list, item)
-			row.set_plot_widget(self.plot_widget)
+			row.bind(self.dataset_list, item) 
 			item.setSizeHint(row.sizeHint())
 			self.dataset_list.addItem(item)
 			self.dataset_list.setItemWidget(item, row)
 	
 	def _on_selection_changed(self) -> None:
-		self.btn_compute.setEnabled(len(self.dataset_list.selectedItems())>0)
+		has_selected = len(self.dataset_list.selectedItems())>0
+		self.btn_compute.setEnabled(has_selected)
+		self.btn_visualize.setEnabled(has_selected)
 
 	def _on_compute_selected(self) -> None:
 		rows = self.get_selected_rows()
 		for r in rows:
 			r.compute_phasor(self.calibration)
-		
+	
+	def _on_visualize_selected(self) -> None:
+		datasets = self.get_selected_datasets()
+		# Filter for datasets that has phasor computed
+		datasets = [ds for ds in datasets if ds.mean is not None]
+		if len(datasets) <= 0: return
+		# Make plot widget
+		phasor_plot_widget = PhasorPlotWidget(self.viewer, datasets)
+		# NOTE: For some reason, area="right" leads to layout problems of the canvas. I'm unsure why.
+		phasor_plot_dock = self.viewer.window.add_dock_widget(phasor_plot_widget, name="Phasor Plot", area="bottom")
+		phasor_plot_dock.setFloating(True)
+		phasor_plot_dock.setAllowedAreas(Qt.NoDockWidgetArea)

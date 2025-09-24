@@ -8,6 +8,7 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolb
 
 if TYPE_CHECKING:
 	import napari
+	from .sample_manager_widget import Dataset
 
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QIcon, QColor
@@ -15,11 +16,13 @@ from qtpy.QtWidgets import (
 	QWidget,
 	QHBoxLayout,
 	QVBoxLayout,
+	QGridLayout,
 	QGroupBox,
 	QFormLayout,
 	QPushButton,
 	QLineEdit,
 	QLabel,
+	QSpinBox,
 	QDoubleSpinBox,
 	QListWidget,
 	QListWidgetItem,
@@ -28,11 +31,12 @@ from qtpy.QtWidgets import (
 
 class PhasorPlotWidget(QWidget):
 	"""
-	A QWidget for hosting a phasorpy PhasorPlot and the associated matplotlib axes.
+	A QWidget for hosting a phasorpy PhasorPlot and the associated matplotlib figure.
 	"""
 	def __init__(
 		self, 
-		viewer:"napari.Viewer", 
+		viewer:"napari.Viewer",
+		datasets:List["Dataset"],
 		dpi:int = 120, 
 		fig_pixels:int = 480, 
 		parent:Optional[QWidget] = None
@@ -40,10 +44,11 @@ class PhasorPlotWidget(QWidget):
 		super().__init__(parent)
 		self.viewer = viewer
 		self.dpi = dpi
-		self.fig_pixels = 480
+		self.fig_pixels = fig_pixels
 
 		# --- Internal state --- #
 		self._points:Dict[str, any] = {}
+		self._datasets = datasets
 
 		self._build()
 
@@ -52,12 +57,52 @@ class PhasorPlotWidget(QWidget):
 		root = QVBoxLayout(self)
 		root.setContentsMargins(5,5,5,5)
 
-		# TODO: Plot controls
+		# --- Plot controls --- #
 		ctrl_box = QGroupBox("Controls (coming soon)")
-		ctrl_layout = QHBoxLayout(ctrl_box)
+		ctrl_grid = QGridLayout()
+		ctrl_grid.setContentsMargins(5,15,5,5)
+		ctrl_box.setLayout(ctrl_grid)
 		root.addWidget(ctrl_box)
+		#  --- Left side: filter control
+		# First row: intensity filter
+		min_count_label = QLabel("Min photon count")
+		max_count_label = QLabel("Max photon count")
+		self.min_count = QSpinBox()
+		self.min_count.setRange(0, int(1e9))
+		self.max_count = QSpinBox()
+		self.max_count.setRange(1, int(1e9))
+		self.max_count.setValue(int(1e9))
+		ctrl_grid.addWidget(min_count_label, 1, 1)
+		ctrl_grid.addWidget(self.min_count, 1, 2)
+		ctrl_grid.addWidget(max_count_label, 1, 3)
+		ctrl_grid.addWidget(self.max_count, 1, 4)
+		# Second row: median filter
+		kernel_size_label = QLabel("Median filter size")
+		repetition_label = QLabel("Median filter repetition")
+		self.kernel_size = QSpinBox()
+		self.kernel_size.setRange(1, 99)
+		self.kernel_size.setValue(3)
+		self.repetition = QSpinBox()
+		self.repetition.setRange(0, 99)
+		ctrl_grid.addWidget(kernel_size_label, 2, 1)
+		ctrl_grid.addWidget(self.kernel_size, 2, 2)
+		ctrl_grid.addWidget(repetition_label, 2, 3)
+		ctrl_grid.addWidget(self.repetition, 2, 4)
+		# Last row: Draw button
+		self.btn_draw = QPushButton("Draw")
+		# TODO: Connect clicked signal
+		ctrl_grid.addWidget(self.btn_draw, 3, 1, 1, 4)
 
-		# Phasor plot and roi management
+		# --- Right side: dataset management
+		self.dataset_list = QListWidget()
+		self.dataset_list.setSelectionMode(self.dataset_list.ExtendedSelection)
+		self.dataset_list.setSpacing(0)
+		for ds in self._datasets:
+			list_item = QListWidgetItem(f"{ds.name} (channel {ds.channel})")
+			self.dataset_list.addItem(list_item)
+		ctrl_grid.addWidget(self.dataset_list, 1, 5, 3, 1)
+
+		# --- Phasor plot and roi management --- #
 		bottom = QHBoxLayout()
 		root.addLayout(bottom, stretch=1) # We really care about the stretching factor here so safer to be explicit
 
@@ -79,7 +124,7 @@ class PhasorPlotWidget(QWidget):
 
 		# Right: Cirlular ROI management panel
 		right = QVBoxLayout()
-		bottom.addLayout(right, stretch=0)
+		#bottom.addLayout(right, stretch=0)
 
 		# TODO: We need to think about how to arrange this ROI management panel.
 
