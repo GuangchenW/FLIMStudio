@@ -19,14 +19,14 @@ class Calibration:
 		self.phase_zero: float = 0.0 # phi calibration
 		self.modulation_zero: float = 1.0 # m calibration
 
-	def load(self, path:str|Path, channel:int=0) -> float|None:
+	def load(self, path:str|Path, channel:int=0) -> None:
 		"""
 		Load reference signals.
 		"""
 		self.signal = load_signal(path, channel)
 		self.path = path
 
-	def calibrate(self, frequency, lifetime):
+	def calibrate(self, frequency, lifetime) -> None:
 		if self.signal is None:
 			raise ValueError("Reference signal is None")
 		# Store frequency used for calibration

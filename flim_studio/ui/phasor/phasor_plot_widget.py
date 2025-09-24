@@ -97,6 +97,7 @@ class PhasorPlotWidget(QWidget):
 		ctrl_grid.addWidget(self.btn_draw, 3, 1, 1, 4)
 
 		# --- Right side: dataset management
+		# A list widget where user can select dataset(s) to draw on the plot
 		self.dataset_list = QListWidget()
 		self.dataset_list.setSelectionMode(self.dataset_list.ExtendedSelection)
 		self.dataset_list.setSpacing(0)
