@@ -142,6 +142,8 @@ class DatasetRow(QWidget):
 		# TODO: Remove the associated layers
 
 	def _on_show(self) -> None:
+		# TODO: Figure out what the show button should do now that 
+		# we have a separate button for visualization.
 		if self.btn_show.isChecked():
 			# Show
 			pass
@@ -203,14 +205,25 @@ class SampleManagerWidget(QWidget):
 
 	## ------ Public API ------ ##
 	def get_selected_rows(self) -> List[DatasetRow]:
+		"""
+		Return the selected DatasetRow QWidget.
+		"""
 		selected = self.dataset_list.selectedItems()
 		return [self.dataset_list.itemWidget(item) for item in selected]
 
 	def get_selected_datasets(self) -> List[Dataset]:
+		"""
+		Return the list of selected Dataset dataclass instance.
+		"""
 		return [row.dataset for row in self.get_selected_rows()]
 
 	## ------ Internal ------ ##
 	def _on_browse_file(self) -> None:
+		"""
+		Prompt for file selection, then load file as phasorpy signal.
+		Store the loaded signal as Dataset object along with metadata.
+		Then create a DatasetRow and insert into the list widget. 
+		"""
 		paths, _ = QFileDialog.getOpenFileNames(
 			self,
 			"Select sample file(s)",
@@ -232,16 +245,28 @@ class SampleManagerWidget(QWidget):
 			self.dataset_list.setItemWidget(item, row)
 	
 	def _on_selection_changed(self) -> None:
+		"""
+		Only for determining the active state of compute and visualize buttons.
+		Disable the buttons if no item is selected.
+		"""
 		has_selected = len(self.dataset_list.selectedItems())>0
 		self.btn_compute.setEnabled(has_selected)
 		self.btn_visualize.setEnabled(has_selected)
 
 	def _on_compute_selected(self) -> None:
+		"""
+		Get the DatasetRow widget in the list items and make them compute phasor given the calibration.
+		"""
 		rows = self.get_selected_rows()
 		for r in rows:
 			r.compute_phasor(self.calibration)
 	
 	def _on_visualize_selected(self) -> None:
+		"""
+		Take all selected datasets, filter for those that have phasor computed,
+		Instantiate a new PhasorPlorWidget instance and initialize with the datasets.
+		If no selected datasets have phasor, simply return.
+		"""
 		datasets = self.get_selected_datasets()
 		# Filter for datasets that has phasor computed
 		datasets = [ds for ds in datasets if ds.mean is not None]
