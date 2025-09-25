@@ -5,13 +5,14 @@ import numpy as np
 from phasorpy.plot import PhasorPlot
 from phasorpy.phasor import phasor_filter_median
 from matplotlib.figure import Figure
+from matplotlib.patches import Circle
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
 
 if TYPE_CHECKING:
 	import napari
 	from .sample_manager_widget import Dataset
 from flim_studio.core.processing import photon_range_mask
-from flim_studio.ui.custom import RemoveButton
+from flim_studio.ui.custom import RemoveButton, ColorButton
 
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QIcon, QColor
@@ -40,6 +41,7 @@ class RoiRowWidget(QWidget):
 	def __init__(
 		self,
 		name: str,
+		ax,
 		viewer: "napari.Viewer",
 		parent: QWidget|None = None,
 	) -> None:
@@ -48,6 +50,7 @@ class RoiRowWidget(QWidget):
 		self.name = name
 		self.viewer = viewer
 		self._color = (0, 1, 1, 0.25)
+		self._circle = self._initialize_circle(ax)
 		self._build(init_radius, init_color)
 
 	## ------ UI ------ ##
@@ -68,27 +71,49 @@ class RoiRowWidget(QWidget):
 		# TODO: Connect value change
 		root.addWidget(self.radius)
 
-		self.btn_color = QPushButton()
-		# TODO: Connect click
+		self.btn_color = ColorButton(color=(0,1,1,0.5))
+		self.btn_color.colorChanged.connect(self._on_color_changed)
 		root.addWidget(self.btn_color)
 
 	## ------ Public API ------ ##
-	def get_color(self):
-		return self._color
+	def move_cricle(self, real, imag) -> None:
+		"""
+		Move the circle to the specified real and imaginary coordinate.
+		"""
+		if self._circle: self._circle.center = (real, imag)
 
 	## ------ Internal ------ ##
-	def _set_color(self, color) -> None:
-		if color != self._color:
-			self._color = color
-			# TODO: Color change effect here
-		if self._color:
-			self.btn_color.setStyleSheet(f"background-color: {self._color};")
+	def _on_color_changed(self, color) -> None:
+		"""
+		Update circle patch color.
+		"""
+		pass
 
-	def _on_pick_color(self) -> None:
-		"""
-		Show color picker dialog. Qt will use the native dialog by default.
-		"""
-		dlg = QtWidgets.QColorDialog(self.btn_color)
+	def _initialize_circle(self, ax, real:float=0.5, imag:float=0.5) -> None:
+		if self._circle:
+			try:
+				self._circle.remove()
+			except Exception:
+				pass
+		circle = Circle((real, imag), radius=self.radius.value(), edgecolor=self._color)
+		self._circle = circle
+		ax.add_patch(circle)
+
+class RoiManagementWidget(QWidget):
+	def __init__(self, parent:QWidget|None=None):
+		super().__init__(parent)
+
+		self._build()
+
+	## ------ UI ------ ##
+	def _build(self) -> None:
+		root = QVBoxLayout(self)
+
+		self.le_roi_name = QLineEdit()
+		self.le_roi_name.setPlaceholderText("ROI name")
+		self.btn_add_roi = QPushButton("Add ROI")
+		# TODO
+
 
 
 class PhasorPlotWidget(QWidget):
