@@ -16,14 +16,6 @@ import numpy as np
 from napari import Viewer
 
 from ..config.defaults import Defaults
-from ..core import (
-	load_signal,
-	phasor_from_signal,
-	tau_map_from_gs,
-	photon_sum,
-	photon_range_mask,
-	apply_spatial_median
-)
 
 # HACK: Gotta clean up imports at some point
 from .phasor.calibration_widget import CalibrationWidget

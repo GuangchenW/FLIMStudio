@@ -30,18 +30,3 @@ def photon_range_mask(
 	labels[kept] = 1
 	labels[high] = 2
 	return labels
-
-def apply_spatial_median(img_YX:np.ndarray, kernel_size:int, repetition:int=1) -> np.ndarray:
-	"""
-	Apply median filter to a 2D image.
-	Returns ndarray.
-	""" 
-	if kernel_size % 2 != 1 or kernel_size < 1:
-		raise ValueError("Median filter kernel_size must be odd and >= 1")
-	if repetition < 1:
-		raise ValueError("Median filter repetition must be >= 1")
-
-	out = median_filter(img_YX, size=kernel_size, mode="nearest")
-	for i in np.arange(1, repetition, 1):
-		out = median_filter(out, size=kernel_size, mode="nearest")
-	return out

@@ -10,6 +10,7 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolb
 if TYPE_CHECKING:
 	import napari
 	from .sample_manager_widget import Dataset
+from flim_studio.core.processing import photon_range_mask
 
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QIcon, QColor
@@ -27,6 +28,7 @@ from qtpy.QtWidgets import (
 	QDoubleSpinBox,
 	QListWidget,
 	QListWidgetItem,
+	QComboBox,
 	QColorDialog,
 )
 
@@ -61,7 +63,7 @@ class PhasorPlotWidget(QWidget):
 		root.setContentsMargins(5,5,5,5)
 
 		# --- Plot controls --- #
-		ctrl_box = QGroupBox("Controls (coming soon)")
+		ctrl_box = QGroupBox("Controls")
 		ctrl_grid = QGridLayout()
 		ctrl_grid.setContentsMargins(5,15,5,5)
 		ctrl_box.setLayout(ctrl_grid)
@@ -91,10 +93,18 @@ class PhasorPlotWidget(QWidget):
 		ctrl_grid.addWidget(self.kernel_size, 2, 2)
 		ctrl_grid.addWidget(repetition_label, 2, 3)
 		ctrl_grid.addWidget(self.repetition, 2, 4)
+		# Third row: plot mode and parameters
+		mode_label = QLabel("Plot mode")
+		self.mode_combo_box = QComboBox()
+		self.mode_combo_box.addItem("contour")
+		self.mode_combo_box.addItem("scatter")
+		self.mode_combo_box.addItem("hist2d")
+		ctrl_grid.addWidget(mode_label, 3, 1)
+		ctrl_grid.addWidget(self.mode_combo_box, 3, 2)
 		# Last row: Draw button
 		self.btn_draw = QPushButton("Draw")
 		self.btn_draw.clicked.connect(self.draw_selected)
-		ctrl_grid.addWidget(self.btn_draw, 3, 1, 1, 4)
+		ctrl_grid.addWidget(self.btn_draw, 4, 1, 1, 4)
 
 		# --- Right side: dataset management
 		# A list widget where user can select dataset(s) to draw on the plot
@@ -107,7 +117,7 @@ class PhasorPlotWidget(QWidget):
 			# We want all datasets to be selected at the start
 			# because we will immediately plot them
 			list_item.setSelected(True)
-		ctrl_grid.addWidget(self.dataset_list, 1, 5, 3, 1)
+		ctrl_grid.addWidget(self.dataset_list, 1, 5, 4, 1)
 
 		# --- Phasor plot and roi management --- #
 		bottom = QHBoxLayout()
@@ -176,7 +186,8 @@ class PhasorPlotWidget(QWidget):
 				min_count,
 				max_count,
 				kernel_size,
-				repetition
+				repetition,
+				self.mode_combo_box.currentText()
 			)
 
 		self._canvas.draw_idle()
@@ -186,23 +197,37 @@ class PhasorPlotWidget(QWidget):
 		dataset: "Dataset",
 		min_photon_count: int = 0,
 		max_photon_count: int = int(1e9),
-		median_filter_kernel_size: int = 3,
+		median_filter_size: int = 3,
 		median_filter_repetition: int = 0,
-		mode:Literal["plot","hist2d","contour"] = "hist2d",
+		mode:Literal["scatter","hist2d","contour"] = "contour",
 		color = None
 	) -> None:
-		# TODO: Finish implementation
+		"""
+		Plot the given dataset.
+		:param min_photon_count: Minimum photon count for a pixel to be plotted. Default 0.
+		:param max_photon_count: Maximum photon count for a pixel to be plotted. Deafult 1e9.
+		:param median_filter_size: Median filter kernel size (nxn). Default 3.
+		:param median_filter_repetition: Number of times median filter is applied. 
+		If <1, no filter is applied. Default 0.
+		:param mode: Plotting mode. Accepts plot, hist2d, contour. Default contour.
+		:param color: Plot color. 
+		"""
+		# Median filter
 		m = dataset.mean; g = dataset.real; s = dataset.imag
 		if median_filter_repetition > 0:
-			m,g,s = phasor_filter_median(m, g, s, repeat=median_filter_repetition, size=median_filter_kernel_size)
-		print(np.max(m))
+			m,g,s = phasor_filter_median(m, g, s, repeat=median_filter_repetition, size=median_filter_size)
+		# Photon sum filter
+		labels = photon_range_mask(dataset.signal.sum(dim='H'), min_photon_count, max_photon_count)
+		mask = (labels == 1)
+		# Finalize
+		g = g[mask]; s = s[mask]
 		match mode:
-			case "plot":
-				pass
+			case "scatter":
+				self._pp.plot(g, s, fmt='.')
 			case "hist2d":
 				self._pp.hist2d(g, s)
 			case "contour":
-				pass
+				self._pp.contour(g, s)
 
 	def add_points(self, name:str, g:np.ndarray, s:np.ndarray, **scatter_kwargs) -> None:
 		""" Add or replace a named set of phasor points."""
