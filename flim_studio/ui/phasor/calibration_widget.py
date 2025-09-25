@@ -17,8 +17,6 @@ from qtpy.QtWidgets import (
 
 from flim_studio.core.calibration import Calibration
 from flim_studio.ui.custom import AutoDoubleSpinBox
-from .. import utils
-
 
 class CalibrationWidget(QWidget):
 	"""
@@ -102,7 +100,6 @@ class CalibrationWidget(QWidget):
 		)
 		if not path:
 			self.le_ref_status.setText("Invalid or unsupported file")
-			self.le_ref_status.setStyleSheet(f"QLabel {{ background-color: {utils.COLOR_FAILURE}; }}");
 			return
 
 		self._ref_path = path
@@ -117,7 +114,6 @@ class CalibrationWidget(QWidget):
 			return
 
 		self.le_ref_status.setText(path)
-		self.le_ref_status.setStyleSheet(f"QLabel {{ background-color: {utils.COLOR_SUCCESS}; }}");
 
 		# Try to detect and set laser frequency
 		freq = self.calibration.get_signal_attribute("frequency")
