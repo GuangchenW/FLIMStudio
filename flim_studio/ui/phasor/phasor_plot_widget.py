@@ -11,6 +11,7 @@ if TYPE_CHECKING:
 	import napari
 	from .sample_manager_widget import Dataset
 from flim_studio.core.processing import photon_range_mask
+from flim_studio.ui.custom import RemoveButton
 
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QIcon, QColor
@@ -31,6 +32,64 @@ from qtpy.QtWidgets import (
 	QComboBox,
 	QColorDialog,
 )
+
+class RoiRowWidget(QWidget):
+	"""
+	ROI control list item: Color and radius.
+	"""
+	def __init__(
+		self,
+		name: str,
+		viewer: "napari.Viewer",
+		parent: QWidget|None = None,
+	) -> None:
+		super().__init__(parent)
+		
+		self.name = name
+		self.viewer = viewer
+		self._color = (0, 1, 1, 0.25)
+		self._build(init_radius, init_color)
+
+	## ------ UI ------ ##
+	def _build(self, init_radius, init_color) -> None:
+		root = QHBoxLayout(self)
+
+		self.btn_remove = RemoveButton(viewer=self.viewer)
+		self.btn_remove.setToolTip("Remove ROI")
+		# TODO: Connect clicked
+		root.addWidget(self.btn_remove)
+
+		self.name_label = QLabel(self.name)
+		root.addWidget(self.name_label)
+
+		self.radius = QDoubleSpinBox()
+		self.radius.setRange(0.01, 99)
+		self.radius.setValue(init_radius)
+		# TODO: Connect value change
+		root.addWidget(self.radius)
+
+		self.btn_color = QPushButton()
+		# TODO: Connect click
+		root.addWidget(self.btn_color)
+
+	## ------ Public API ------ ##
+	def get_color(self):
+		return self._color
+
+	## ------ Internal ------ ##
+	def _set_color(self, color) -> None:
+		if color != self._color:
+			self._color = color
+			# TODO: Color change effect here
+		if self._color:
+			self.btn_color.setStyleSheet(f"background-color: {self._color};")
+
+	def _on_pick_color(self) -> None:
+		"""
+		Show color picker dialog. Qt will use the native dialog by default.
+		"""
+		dlg = QtWidgets.QColorDialog(self.btn_color)
+
 
 class PhasorPlotWidget(QWidget):
 	"""
@@ -208,7 +267,7 @@ class PhasorPlotWidget(QWidget):
 		:param max_photon_count: Maximum photon count for a pixel to be plotted. Deafult 1e9.
 		:param median_filter_size: Median filter kernel size (nxn). Default 3.
 		:param median_filter_repetition: Number of times median filter is applied. 
-		If <1, no filter is applied. Default 0.
+			If <1, no filter is applied. Default 0.
 		:param mode: Plotting mode. Accepts plot, hist2d, contour. Default contour.
 		:param color: Plot color. 
 		"""

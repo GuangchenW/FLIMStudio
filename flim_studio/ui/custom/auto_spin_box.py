@@ -11,7 +11,7 @@ from qtpy.QtWidgets import (
 	QStyle
 )
 
-import flim_studio.ui.utils as utils
+from flim_studio.ui.utils import COLOR_SUCCESS, COLOR_FAILURE, COLOR_OVERRIDDEN
 
 class AutoDoubleSpinBox(QWidget):
 	"""
@@ -57,7 +57,7 @@ class AutoDoubleSpinBox(QWidget):
 
 		# Initial state = missing
 		# TODO: This indication is perhaps a bit misleading?
-		#self._apply_bg(utils.COLOR_FAILURE)
+		#self._apply_bg(COLOR_FAILURE)
 
 		# Signals
 		self._spin.valueChanged.connect(self._on_value_changed)
@@ -91,14 +91,14 @@ class AutoDoubleSpinBox(QWidget):
 			self._overridden = False
 			self._has_cached = False
 			self.reset_button.setEnabled(False)
-			#self._apply_bg(utils.COLOR_FAILURE)
+			#self._apply_bg(COLOR_FAILURE)
 			self._reset_bg()
 		else:
 			self.cached_value = value
 			self._overridden = False
 			self._has_cached = True
 			self.reset_button.setEnabled(True)
-			self._apply_bg(utils.COLOR_SUCCESS)
+			self._apply_bg(COLOR_SUCCESS)
 
 	def reset_to_cached(self) -> None:
 		"""Reset to the cached detected value (if present)."""
@@ -117,7 +117,7 @@ class AutoDoubleSpinBox(QWidget):
 	## ------ Internals ------ ##
 	def _on_value_changed(self, val:float) -> None:
 		_overridden = True
-		self._apply_bg(utils.COLOR_OVERRIDDEN)
+		self._apply_bg(COLOR_OVERRIDDEN)
 		self.valueChanged.emit(val)
 
 	def _apply_bg(self, color_hex: str) -> None:

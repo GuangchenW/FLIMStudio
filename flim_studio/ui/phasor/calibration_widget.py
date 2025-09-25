@@ -16,7 +16,7 @@ from qtpy.QtWidgets import (
 )
 
 from flim_studio.core.calibration import Calibration
-from flim_studio.ui.component.auto_spin_box import AutoDoubleSpinBox
+from flim_studio.ui.custom import AutoDoubleSpinBox
 from .. import utils
 
 

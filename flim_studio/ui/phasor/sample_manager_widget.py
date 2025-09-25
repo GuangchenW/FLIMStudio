@@ -29,6 +29,7 @@ from qtpy.QtWidgets import (
 
 from flim_studio.core.calibration import Calibration
 from flim_studio.core.io import load_signal
+from flim_studio.ui.custom import RemoveButton
 from .phasor_plot_widget import PhasorPlotWidget
 
 @dataclass
@@ -63,7 +64,8 @@ class DatasetRow(QWidget):
 	def _build(self) -> None:
 		layout = QHBoxLayout(self)
 		self.label = QLabel(self.name)
-		self.btn_delete = self._make_delete_button(self.viewer)
+		self.btn_delete = RemoveButton(viewer=self.viewer)
+		self.btn_delete.setToolTip("Remove dataset")
 		self.btn_delete.clicked.connect(self._on_removal)
 		self.btn_show = self._make_show_button(self.viewer)
 		self.btn_show.clicked.connect(self._on_show)
@@ -73,21 +75,6 @@ class DatasetRow(QWidget):
 		layout.addWidget(self.btn_delete, 0)
 		layout.addWidget(self.label, 1)
 		layout.addWidget(self.btn_show, 0)
-
-	def _make_delete_button(self, viewer) -> QPushButton:
-		btn = QPushButton()
-
-		def apply_icons(*_):
-			theme = getattr(viewer, "theme", "dark")
-			icon = QIcon()
-			icon.addFile(f"theme_{theme}:/delete.svg", mode=QIcon.Normal, state=QIcon.Off)
-			btn.setIcon(icon)
-
-		apply_icons() # Initialize the icons
-		btn.setToolTip("Unload and remove dataset")
-		# Keep in sync with theme
-		viewer.events.theme.connect(apply_icons)
-		return btn
 
 	def _make_show_button(self, viewer) -> QPushButton:
 		btn = QPushButton()
