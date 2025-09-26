@@ -19,7 +19,10 @@ if TYPE_CHECKING:
 
 class PhasorControlPanel(QGroupBox):
 	"""
-	Control panel for phasor graph. Including plotting method and various filtering parameters.
+	Control panel for phasor graph.
+	Contains controls for adjusting plotting method and various filtering parameters.
+	Also contains the ajustable list of datasets for this plotting instance.
+	The user may select a non-empty subset from the list to work with.
 	"""
 	plotPhasor = Signal()
 
@@ -101,7 +104,7 @@ class PhasorControlPanel(QGroupBox):
 
 	def get_params(self) -> Dict[str,Any]:
 		"""
-		Return a dictionary of control parameters.
+		Return a dictionary of control parameters. The keys match those in PhasorGraphWidget.draw_dataset.
 		min_photon_count: minimum photon count
 		max_photon_count: maximum photon count
 		median_filter_size: median filter kernel size

@@ -1,39 +1,19 @@
-from typing import Dict, Optional, List, Literal, TYPE_CHECKING
-from dataclasses import dataclass
+from typing import Optional, List, TYPE_CHECKING
 
 import numpy as np
-from phasorpy.plot import PhasorPlot
-from phasorpy.phasor import phasor_filter_median
-from matplotlib.figure import Figure
-from matplotlib.patches import Circle
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
 
-if TYPE_CHECKING:
-	import napari
-	from .sample_manager_widget import Dataset
-from flim_studio.core.processing import photon_range_mask
-from flim_studio.ui.custom import RemoveButton, ColorButton
 from .graph import PhasorGraphWidget
 from .control_panel import PhasorControlPanel
 
-from qtpy.QtCore import Qt
-from qtpy.QtGui import QIcon, QColor
 from qtpy.QtWidgets import (
 	QWidget,
 	QHBoxLayout,
 	QVBoxLayout,
-	QGridLayout,
-	QGroupBox,
-	QFormLayout,
-	QPushButton,
-	QLineEdit,
-	QLabel,
-	QSpinBox,
-	QDoubleSpinBox,
-	QListWidget,
-	QListWidgetItem,
-	QComboBox,
 )
+
+if TYPE_CHECKING:
+	import napari
+	from .sample_manager_widget import Dataset
 
 class PhasorPlotWidget(QWidget):
 	"""
