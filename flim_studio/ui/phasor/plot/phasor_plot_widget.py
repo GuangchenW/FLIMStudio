@@ -56,6 +56,9 @@ class PhasorPlotWidget(QWidget):
 		self.roi_manager = RoiManagerWidget(self.phasor_graph_widget.get_ax(), self.viewer)
 		bottom.addWidget(self.roi_manager, stretch=0)
 
+		# Connect ROI manager to the graph click signal
+		self.phasor_graph_widget.canvasClicked.connect(self.roi_manager.move_selected_roi)
+
 	## ------ Internal ------ ##
 	def _on_plot_phasor(self) -> None:
 		datasets = self.control_panel.get_selected_datasets()

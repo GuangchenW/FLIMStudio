@@ -97,7 +97,6 @@ class RoiRowWidget(QWidget):
 		if self._circle is not None and self._circle.axes is not None:
 			self._circle.remove()
 
-		# Visible on dark UIs: filled with alpha and a solid edge
 		self._circle = Circle(
 			center,
 			radius=radius,
@@ -127,7 +126,7 @@ class RoiRowWidget(QWidget):
 			raise RuntimeError("Something is very wrong")
 		r = self._list.row(self._item) # Get the row index
 		self._list.takeItem(r) # Remove from list
-		self.remove_circle()
+		self.remove_circle() # Remove the cicular patch
 		self.deleteLater() # Delete the widget; let gc handle the list item
 
 	def _draw_idle(self) -> None:

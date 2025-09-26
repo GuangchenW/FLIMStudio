@@ -38,7 +38,6 @@ class ColorButton(QPushButton):
 			dlg.setCurrentColor(QColor(self._color))
 		if dlg.exec_():
 			self.set_color(dlg.currentColor().name())
-			print(self._color)
 
 	def mousePressEvent(self, e):
 		if e.button() == Qt.RightButton:
