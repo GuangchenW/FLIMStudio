@@ -30,7 +30,7 @@ from qtpy.QtWidgets import (
 from flim_studio.core.calibration import Calibration
 from flim_studio.core.io import load_signal
 from flim_studio.ui.custom import RemoveButton
-from .phasor_plot_widget import PhasorPlotWidget
+from .plot import PhasorPlotWidget
 
 @dataclass
 class Dataset:

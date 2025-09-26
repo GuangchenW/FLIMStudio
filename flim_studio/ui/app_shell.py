@@ -20,7 +20,6 @@ from ..config.defaults import Defaults
 # HACK: Gotta clean up imports at some point
 from .phasor.calibration_widget import CalibrationWidget
 from .phasor.sample_manager_widget import SampleManagerWidget
-from .phasor.phasor_plot_widget import PhasorPlotWidget
 
 class PhasorAnalysis(QWidget):
 	def __init__(self, viewer:Viewer) -> None:
