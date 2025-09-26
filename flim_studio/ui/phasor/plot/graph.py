@@ -1,24 +1,25 @@
 from typing import Optional, Literal, TYPE_CHECKING
 
-# Qt
+from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QWidget, QVBoxLayout
 
-# Matplotlib
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
 
-# Phasor/processing
 from phasorpy.plot import PhasorPlot
 from phasorpy.phasor import phasor_filter_median
 from flim_studio.core.processing import photon_range_mask
 
 if TYPE_CHECKING:
 	from ..sample_manager import Dataset
+	from matplotlib.axes import Axes
 
 class PhasorGraphWidget(QWidget):
 	"""
 	QWidget container for matplotlib figure and phasor plot related APIs.
 	"""
+	canvasClicked = Signal(float, float)
+
 	def __init__(
 		self,
 		frequency: float|None = None,
@@ -42,6 +43,8 @@ class PhasorGraphWidget(QWidget):
 		self._canvas = FigureCanvasQTAgg(self._fig)
 		self._toolbar = NavigationToolbar2QT(self._canvas, self)
 		self._ax = self._fig.add_subplot(111)
+		# Connect canavs click event for placing ROIs
+		self._fig.canvas.mpl_connect("button_press_event", self._on_mpl_click)
 		# Make PhasorPlot object and hand it control over the axes
 		self._pp = PhasorPlot(ax=self._ax, frequency=self.frequency)
 		self.draw_idle()
@@ -50,6 +53,9 @@ class PhasorGraphWidget(QWidget):
 		root.addWidget(self._canvas, stretch=1)
 
 	## ------ Public API ------ ##
+	def get_ax(self) -> "Axes":
+		return self._ax
+
 	def clear_plot(self) -> None:
 		"""
 		Reset the plot.
@@ -117,6 +123,22 @@ class PhasorGraphWidget(QWidget):
 		self._canvas.draw_idle()
 
 	## ------ Internal ------ ##
+	def _on_mpl_click(self, event) -> None:
+		"""
+		Matplotlib 'button_press_event' handler.
+		Emits (g, s) coordinate when the click occurs inside the axes.
+		"""
+		# Ignore clicks while toolbar is in an active mode (pan/zoom)
+		if getattr(self._toolbar, "mode", ""):
+			return
+		# Ignore if not in our axes (there should only be one but safeguard)
+		if event.inaxes is not self._ax:
+			return
+		if event.xdata is None or event.ydata is None:
+			return
+		g, s = float(event.xdata), float(event.ydata)
+		self.canvasClicked.emit(g, s)
+
 	def _draw_semicircle(self) -> None:
 		# We have to give it frequency here because apparently PhasorPlot does not
 		# keep track of the frequency value given in init.

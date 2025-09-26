@@ -8,11 +8,12 @@ from qtpy.QtWidgets import (
 class ColorButton(QPushButton):
 	colorChanged = Signal(object)
 
-	def __init(self, *args, color=None, **kwargs):
-		super().__init(*args, **kwargs)
+	def __init__(self, *args, color:str="#ff0000", **kwargs):
+		super().__init__(*args, **kwargs)
 
 		self._color = None
 		self._default = color
+		self.set_color(self._default)
 		self.pressed.connect(self._on_pick_color)
 
 	## ------ Public API ------ ##
@@ -31,11 +32,13 @@ class ColorButton(QPushButton):
 
 	## ------ Internal ------ ##
 	def _on_pick_color(self) -> None:
-		dlg = QColorDialog(self)
+		dlg = QColorDialog(self.window())
+		dlg.setStyleSheet("")
 		if self._color:
 			dlg.setCurrentColor(QColor(self._color))
 		if dlg.exec_():
 			self.set_color(dlg.currentColor().name())
+			print(self._color)
 
 	def mousePressEvent(self, e):
 		if e.button() == Qt.RightButton:

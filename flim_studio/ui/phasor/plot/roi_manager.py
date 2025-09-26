@@ -1,6 +1,5 @@
 from __future__ import annotations
-from typing import Optional, Tuple
-from matplotlib.axes import Axes
+from typing import Optional, Tuple, TYPE_CHECKING
 from matplotlib.patches import Circle
 from qtpy.QtWidgets import (
 	QWidget,
@@ -9,12 +8,15 @@ from qtpy.QtWidgets import (
 	QLineEdit,
 	QLabel,
 	QDoubleSpinBox,
+	QPushButton,
 	QListWidget,
 	QListWidgetItem
 )
 from flim_studio.ui.custom import RemoveButton, ColorButton
 
-RGBA = Tuple[float, float, float, float]
+if TYPE_CHECKING:
+	from matplotlib.axes import Axes
+
 
 class RoiRowWidget(QWidget):
 	"""
@@ -24,39 +26,41 @@ class RoiRowWidget(QWidget):
 	def __init__(
 		self,
 		name: str,
-		ax: Axes,
+		ax: "Axes",
 		viewer: "napari.Viewer",
 		*,
 		center: Tuple[float, float] = (0.5, 0.5),
 		radius: float = 0.1,
-		color: RGBA = (0.0, 1.0, 1.0, 0.35),  # cyan-ish with some fill alpha
+		color: str = "#ff0000",
 		parent: QWidget | None = None,
 	) -> None:
 		super().__init__(parent)
-		self.name = name
+		self.name = name if name else "ROI"
 		self.viewer = viewer
-		self._ax: Axes = ax
+		self._ax = ax
 		self._center = center
-		self._color: RGBA = color
+		self._color: str = color
 		self._circle: Circle|None = None
 
 		self._build_ui(radius, color)
 		self._create_circle(center=self._center, radius=radius, color=color)
 
 	## ------ UI ------ ##
-	def _build_ui(self, init_radius: float, init_color: RGBA) -> None:
+	def _build_ui(self, init_radius:float, init_color:str) -> None:
 		root = QHBoxLayout(self)
 
 		self.btn_remove = RemoveButton(viewer=self.viewer)
 		self.btn_remove.setToolTip("Remove ROI")
-		# self.btn_remove.clicked.connect(self.deleteLater)  # or emit a signal upward
+		self.btn_remove.clicked.connect(self._on_removal)
 		root.addWidget(self.btn_remove)
 
 		self.name_label = QLabel(self.name)
+		self.name_label.setMaximumWidth(60)
 		root.addWidget(self.name_label, stretch=1)
 
 		self.radius = QDoubleSpinBox()
 		self.radius.setRange(0.01, 99.0)
+		self.radius.setSingleStep(0.01)
 		self.radius.setValue(init_radius)
 		self.radius.valueChanged.connect(self._on_radius_changed)
 		root.addWidget(self.radius)
@@ -87,21 +91,18 @@ class RoiRowWidget(QWidget):
 		self._item = item
 
 	## ------ Internal ------ ##
-	def _create_circle(self, *, center: Tuple[float, float], radius: float, color: RGBA) -> None:
+	def _create_circle(self, *, center:Tuple[float, float], radius:float, color:str) -> None:
 		"""Create the circle with current settings and add to the axes."""
 		# Clean up any existing patch first
 		if self._circle is not None and self._circle.axes is not None:
 			self._circle.remove()
 
 		# Visible on dark UIs: filled with alpha and a solid edge
-		face = color
-		edge = (color[0], color[1], color[2], 1.0)
-
 		self._circle = Circle(
 			center,
 			radius=radius,
 			fill=False,
-			edgecolor=edge,
+			edgecolor=color,
 			linewidth=1.5,
 			zorder=10,
 			picker=False,
@@ -114,8 +115,8 @@ class RoiRowWidget(QWidget):
 			self._circle.set_radius(r)
 			self._draw_idle()
 
-	def _on_color_changed(self, color: RGBA) -> None:
-		"""Update circle color from ColorButton (expects RGBA in 0–1)."""
+	def _on_color_changed(self, color:str) -> None:
+		"""Update circle color from ColorButton (expects hex color string)."""
 		self._color = color
 		if self._circle is not None:
 			self._circle.set_edgecolor(color)
@@ -137,7 +138,7 @@ class RoiRowWidget(QWidget):
 			fig.canvas.draw_idle()
 
 
-class RoiManagementWidget(QWidget):
+class RoiManagerWidget(QWidget):
 	def __init__(
 		self,
 		ax:Axes,

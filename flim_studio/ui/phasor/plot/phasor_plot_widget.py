@@ -2,14 +2,15 @@ from typing import Optional, List, TYPE_CHECKING
 
 import numpy as np
 
-from .graph import PhasorGraphWidget
-from .control_panel import PhasorControlPanel
-
 from qtpy.QtWidgets import (
 	QWidget,
 	QHBoxLayout,
 	QVBoxLayout,
 )
+
+from .graph import PhasorGraphWidget
+from .control_panel import PhasorControlPanel
+from .roi_manager import RoiManagerWidget
 
 if TYPE_CHECKING:
 	import napari
@@ -29,7 +30,6 @@ class PhasorPlotWidget(QWidget):
 		super().__init__(parent)
 		self.viewer = viewer
 		self.frequency: float|None = frequency
-
 		self._datasets = datasets
 
 		self._build()
@@ -46,17 +46,15 @@ class PhasorPlotWidget(QWidget):
 
 		# Phasor plot and roi management
 		bottom = QHBoxLayout()
-		root.addLayout(bottom, stretch=1) # We really care about the stretching factor here so safer to be explicit
+		root.addLayout(bottom, stretch=1)
 		# Left: PhasorPlot
 		# TODO: DPI and pixels from config files?
 		self.phasor_graph_widget = PhasorGraphWidget(self.frequency, 120, 480)
 		bottom.addWidget(self.phasor_graph_widget, stretch=1)
 
 		# Right: Cirlular ROI management panel
-		#right = QVBoxLayout()
-		#bottom.addLayout(right, stretch=0)
-
-		# TODO: We need to think about how to arrange this ROI management panel.
+		self.roi_manager = RoiManagerWidget(self.phasor_graph_widget.get_ax(), self.viewer)
+		bottom.addWidget(self.roi_manager, stretch=0)
 
 	## ------ Internal ------ ##
 	def _on_plot_phasor(self) -> None:
