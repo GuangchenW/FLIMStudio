@@ -66,7 +66,12 @@ class PhasorGraphWidget(QWidget):
 		xscale = self._ax.get_xscale()
 		yscale = self._ax.get_yscale()
 		aspect = self._ax.get_aspect()
+		# HACK: Save the circle ROI patches before clearing and add back.
+		# This works, but not scalable once we add arrows, component analysis, etc.
+		patches = self._ax.patches[:]
 		self._ax.cla()
+		for p in patches:
+			self._ax.add_patch(p)  
 		self._ax.set_xlim(xlim)
 		self._ax.set_ylim(ylim)
 		self._ax.set_xscale(xscale)
