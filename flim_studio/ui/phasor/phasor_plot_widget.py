@@ -50,8 +50,10 @@ class RoiRowWidget(QWidget):
 		self.name = name
 		self.viewer = viewer
 		self._color = (0, 1, 1, 0.25)
-		self._circle = self._initialize_circle(ax)
-		self._build(init_radius, init_color)
+		# TODO: Get from config file?
+		self._build(0.1, self._color)
+		self._circle = None
+		self._initialize_circle(ax)
 
 	## ------ UI ------ ##
 	def _build(self, init_radius, init_color) -> None:
@@ -112,8 +114,119 @@ class RoiManagementWidget(QWidget):
 		self.le_roi_name = QLineEdit()
 		self.le_roi_name.setPlaceholderText("ROI name")
 		self.btn_add_roi = QPushButton("Add ROI")
+		# TODO: Connect clicked signal
+		layout = QHBoxLayout()
+		layout.addWidget(self.le_roi_name)
+		layout.addWidget(self.btn_add_roi)
+		root.addLayout(layout)
+
+		self.roi_list = QListWidget()
+		root.addWidget(self.roi_list)
 		# TODO
 
+class PhasorGraphWidget(QWidget):
+	"""
+	QWidget container for matplotlib figure and phasor plot related APIs.
+	"""
+	def __init__(
+		self,
+		frequency: float|None = None,
+		dpi: int = 120,
+		fig_pixels: int = 480,
+		parent: QWidget|None = None
+	) -> None:
+		super().__init__(parent)
+		self.dpi = dpi
+		self.fig_pixels = fig_pixels
+		self.frequency = frequency
+
+		self._build()
+
+	## ------ UI ------ ##
+	def _build(self) -> None:
+		root = QVBoxLayout(self)
+
+		fsize = self.fig_pixels/self.dpi
+		self._fig = Figure(figsize=(fsize, fsize), dpi=self.dpi)
+		self._canvas = FigureCanvasQTAgg(self._fig)
+		self._toolbar = NavigationToolbar2QT(self._canvas, self)
+		self._ax = self._fig.add_subplot(111)
+		# Make PhasorPlot object and hand it control over the axes
+		self._pp = PhasorPlot(ax=self._ax, frequency=self.frequency)
+		self.draw_idle()
+
+		root.addWidget(self._toolbar)
+		root.addWidget(self._canvas, stretch=1)
+
+	## ------ Public API ------ ##
+	def clear_plot(self) -> None:
+		"""
+		Reset the plot.
+		"""
+		# This is nasty, but I don't think there is a more reliable way?
+		xlim = self._ax.get_xlim()
+		ylim = self._ax.get_ylim()
+		xscale = self._ax.get_xscale()
+		yscale = self._ax.get_yscale()
+		aspect = self._ax.get_aspect()
+		self._ax.cla()
+		self._ax.set_xlim(xlim)
+		self._ax.set_ylim(ylim)
+		self._ax.set_xscale(xscale)
+		self._ax.set_yscale(yscale)
+		self._ax.set_aspect(aspect)
+
+		self._ax.set_title(f"Phasor plot ({self.frequency} MHz)")
+		self._ax.set_xlabel("G, real")
+		self._ax.set_ylabel("S, imag")
+		self._draw_semicircle()
+
+	def draw_dataset(
+		self,
+		dataset: "Dataset",
+		min_photon_count: int = 0,
+		max_photon_count: int = int(1e9),
+		median_filter_size: int = 3,
+		median_filter_repetition: int = 0,
+		mode:Literal["scatter","hist2d","contour"] = "contour",
+		color = None
+	) -> None:
+		"""
+		Plot the given dataset.
+		:param min_photon_count: Minimum photon count for a pixel to be plotted. Default 0.
+		:param max_photon_count: Maximum photon count for a pixel to be plotted. Deafult 1e9.
+		:param median_filter_size: Median filter kernel size (nxn). Default 3.
+		:param median_filter_repetition: Number of times median filter is applied. 
+			If <1, no filter is applied. Default 0.
+		:param mode: Plotting mode. Accepts plot, hist2d, contour. Default contour.
+		:param color: Plot color. 
+		"""
+		# Median filter
+		m = dataset.mean; g = dataset.real; s = dataset.imag
+		if median_filter_repetition > 0:
+			m,g,s = phasor_filter_median(m, g, s, repeat=median_filter_repetition, size=median_filter_size)
+		# Photon sum filter
+		labels = photon_range_mask(dataset.signal.sum(dim='H'), min_photon_count, max_photon_count)
+		mask = (labels == 1)
+		# Finalize
+		g = g[mask]; s = s[mask]
+		match mode:
+			case "scatter":
+				self._pp.plot(g, s, fmt='.')
+			case "hist2d":
+				self._pp.hist2d(g, s)
+			case "contour":
+				self._pp.contour(g, s)
+
+	def draw_idle(self) -> None:
+		"""Schedule canvas changes to be rendered."""
+		self._canvas.draw_idle()
+
+	## ------ Internal ------ ##
+	def _draw_semicircle(self) -> None:
+		# We have to give it frequency here because apparently PhasorPlot does not
+		# keep track of the frequency value given in init.
+		self._pp.semicircle(frequency=self.frequency, lifetime=[0.5,1,2,4,8])
 
 
 class PhasorPlotWidget(QWidget):
@@ -124,15 +237,11 @@ class PhasorPlotWidget(QWidget):
 		self, 
 		viewer: "napari.Viewer",
 		datasets: List["Dataset"],
-		dpi: int = 120, 
-		fig_pixels: int = 480,
 		frequency: float|None = None,
 		parent: QWidget|None = None,
 	) -> None:
 		super().__init__(parent)
 		self.viewer = viewer
-		self.dpi = dpi
-		self.fig_pixels = fig_pixels
 		self.frequency: float|None = frequency
 
 		# --- Internal state --- #
@@ -207,21 +316,10 @@ class PhasorPlotWidget(QWidget):
 		bottom = QHBoxLayout()
 		root.addLayout(bottom, stretch=1) # We really care about the stretching factor here so safer to be explicit
 
-		# Left: Matplotlib canvas for PhasorPlot
-		left = QVBoxLayout()
-		bottom.addLayout(left, stretch=1)
-
-		fsize = self.fig_pixels/self.dpi
-		self._fig = Figure(figsize=(fsize, fsize), dpi=self.dpi, tight_layout=True)
-		self._canvas = FigureCanvasQTAgg(self._fig)
-		self._toolbar = NavigationToolbar2QT(self._canvas, self)
-		self._ax = self._fig.add_subplot(111)
-		# Make PhasorPlot object and hand it control over the axes
-		self._pp = PhasorPlot(ax=self._ax) # WARNING: Do we need the frequency argument here?
-		self._draw_semicircle()
-
-		left.addWidget(self._toolbar)
-		left.addWidget(self._canvas, stretch=1)
+		# Left: PhasorPlot
+		# TODO: DPI and pixels from config files?
+		self.phasor_graph_widget = PhasorGraphWidget(self.frequency, 120, 480)
+		bottom.addWidget(self.phasor_graph_widget, stretch=1)
 
 		# Right: Cirlular ROI management panel
 		#right = QVBoxLayout()
@@ -230,32 +328,7 @@ class PhasorPlotWidget(QWidget):
 		# TODO: We need to think about how to arrange this ROI management panel.
 
 	## ------ Public API ------ ##
-	def clear_plot(self) -> None:
-		"""
-		Reset the plot.
-		"""
-		# This is nasty, but I don't think there is a more reliable way?
-		xlim = self._ax.get_xlim()
-		ylim = self._ax.get_ylim()
-		xscale = self._ax.get_xscale()
-		yscale = self._ax.get_yscale()
-		aspect = self._ax.get_aspect()
-		self._ax.cla()
-		self._ax.set_xlim(xlim)
-		self._ax.set_ylim(ylim)
-		self._ax.set_xscale(xscale)
-		self._ax.set_yscale(yscale)
-		self._ax.set_aspect(aspect)
-
-		self._ax.set_title("Phasor Plot")
-		self._ax.set_xlabel("G, real")
-		self._ax.set_ylabel("S, imag")
-		self._draw_semicircle()
-		self._canvas.draw_idle()
-
 	def draw_selected(self) -> None:
-		self.clear_plot() # Clear plot first
-
 		min_count = self.min_count.value()
 		max_count = self.max_count.value()
 		kernel_size = self.kernel_size.value()
@@ -264,8 +337,10 @@ class PhasorPlotWidget(QWidget):
 		# Get selected row indices
 		indices = [self.dataset_list.row(item) for item in self.dataset_list.selectedItems()]
 
+		# Clear graph
+		self.phasor_graph_widget.clear_plot()
 		for idx in indices:
-			self.draw_dataset(
+			self.phasor_graph_widget.draw_dataset(
 				self._datasets[idx],
 				min_count,
 				max_count,
@@ -274,84 +349,4 @@ class PhasorPlotWidget(QWidget):
 				self.mode_combo_box.currentText()
 			)
 
-		self._canvas.draw_idle()
-
-	def draw_dataset(
-		self,
-		dataset: "Dataset",
-		min_photon_count: int = 0,
-		max_photon_count: int = int(1e9),
-		median_filter_size: int = 3,
-		median_filter_repetition: int = 0,
-		mode:Literal["scatter","hist2d","contour"] = "contour",
-		color = None
-	) -> None:
-		"""
-		Plot the given dataset.
-		:param min_photon_count: Minimum photon count for a pixel to be plotted. Default 0.
-		:param max_photon_count: Maximum photon count for a pixel to be plotted. Deafult 1e9.
-		:param median_filter_size: Median filter kernel size (nxn). Default 3.
-		:param median_filter_repetition: Number of times median filter is applied. 
-			If <1, no filter is applied. Default 0.
-		:param mode: Plotting mode. Accepts plot, hist2d, contour. Default contour.
-		:param color: Plot color. 
-		"""
-		# Median filter
-		m = dataset.mean; g = dataset.real; s = dataset.imag
-		if median_filter_repetition > 0:
-			m,g,s = phasor_filter_median(m, g, s, repeat=median_filter_repetition, size=median_filter_size)
-		# Photon sum filter
-		labels = photon_range_mask(dataset.signal.sum(dim='H'), min_photon_count, max_photon_count)
-		mask = (labels == 1)
-		# Finalize
-		g = g[mask]; s = s[mask]
-		match mode:
-			case "scatter":
-				self._pp.plot(g, s, fmt='.')
-			case "hist2d":
-				self._pp.hist2d(g, s)
-			case "contour":
-				self._pp.contour(g, s)
-
-	def add_points(self, name:str, g:np.ndarray, s:np.ndarray, **scatter_kwargs) -> None:
-		""" Add or replace a named set of phasor points."""
-		if name in self._points:
-			try:
-				for art in self._points[name]:
-					art.remove()
-			except Exception:
-				pass
-			self._points.pop(name, None)
-
-		# Safeguard against infinite
-		g = np.asarray(g).ravel()
-		s = np.asarray(s).ravel()
-		ok = np.isfinite(g) & np.isfinite(s)
-		g,s = g[ok], s[ok]
-
-		# NOTE: This returns list[matplotlib.lines.Line2D] which I need to figure out
-		art_list = self._pp.hist2d(g,s)
-		print(art_list)
-		self._points[name] = art_list
-		self._canvas.draw_idle()
-
-	def remove_points(self, name:str, draw_now:bool=True) -> None:
-		"""Remove a set of points by name."""
-		art_list = self._points.pop(name, None)
-		if not art_list is None:
-			try:
-				for art in art_list:
-					art.remove()
-			except Exception:
-				pass
-			if draw_now: self._canvas.draw_idle()
-
-	def clear_points(self) -> None:
-		"""Remove all point sets."""
-		for name in self._points.keys():
-			self.remove_points(name, False)
-		self._canvas.draw_idle()
-
-	## ------ Internal ------ ##
-	def _draw_semicircle(self) -> None:
-		self._pp.semicircle(frequency=self.frequency, lifetime=[0.5,1,2,4,8])
+		self.phasor_graph_widget.draw_idle()
