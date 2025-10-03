@@ -71,7 +71,7 @@ class PhasorGraphWidget(QWidget):
 		patches = self._ax.patches[:]
 		self._ax.cla()
 		for p in patches:
-			self._ax.add_patch(p)  
+			self._ax.add_patch(p)
 		self._ax.set_xlim(xlim)
 		self._ax.set_ylim(ylim)
 		self._ax.set_xscale(xscale)

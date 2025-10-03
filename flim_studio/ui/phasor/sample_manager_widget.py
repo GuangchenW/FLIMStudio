@@ -58,7 +58,10 @@ class DatasetRow(QWidget):
 		self.viewer = viewer
 		self._list: QListWidget|None = None
 		self._item: QListWidgetItem|None = None
+
+		self.compute_phasor()
 		self._build()
+		self._add_image()
 
 	## ------ UI ------ ##
 	def _build(self) -> None:
@@ -69,7 +72,6 @@ class DatasetRow(QWidget):
 		self.btn_delete.clicked.connect(self._on_removal)
 		self.btn_show = self._make_show_button(self.viewer)
 		self.btn_show.clicked.connect(self._on_show)
-		self.btn_show.setEnabled(False)
 		# Since I am too lazy to implement a confirm delete dialog,
 		# put label in the middle to prevent missclick of buttons
 		layout.addWidget(self.btn_delete, 0)
@@ -83,19 +85,12 @@ class DatasetRow(QWidget):
 			theme = getattr(viewer, "theme", "dark")
 			icon = QIcon()
 			# Enabled icon
-			icon.addFile(f"theme_{theme}:/visibility.svg", mode=QIcon.Normal, state=QIcon.Off)
-			icon.addFile(f"theme_{theme}:/visibility_off.svg", mode=QIcon.Disabled, state=QIcon.Off)
+			icon.addFile(f"theme_{theme}:/new_image.svg", mode=QIcon.Normal, state=QIcon.Off)
 			btn.setIcon(icon)
 
 		btn.setCheckable(True)
 		apply_icons() # Initialize the icons
-		# HACK: Showing tooltip covering both enabled and disabled state.
-		# Better to make tooltips separate but I'm lazy.
-		btn.setToolTip("""
-			Show photon count average and phasor scatter.\n
-			Disabled if the phasor has been calculated yet.
-		""")
-		btn.setAttribute(Qt.WA_AlwaysShowToolTips, True)
+		btn.setToolTip("Show average signal as image.")
 		# Keep in sync with theme
 		viewer.events.theme.connect(apply_icons)
 		return btn
@@ -108,17 +103,26 @@ class DatasetRow(QWidget):
 		self._list = listw
 		self._item = item
 
-	def compute_phasor(self, calibration:Optional[Calibration]=None) -> None:
+	def compute_phasor(self) -> None:
 		"""
-		Compute the phasor coordinate of dataset.
-		If calibration is provided, calibrate the phasor coordinated accordingly. 
+		Compute the uncalibrated phasor.
 		"""
 		self.dataset.mean, self.dataset.real, self.dataset.imag = phasor_from_signal(self.dataset.signal, axis='H')
-		if not calibration is None:
-			self.dataset.real, self.dataset.imag = calibration.compute_calibrated_phasor(self.dataset.real, self.dataset.imag)
-		self.btn_show.setEnabled(True)
+
+	def calibrate_phasor(self, calibration:Calibration) -> None:
+		"""
+		Calibrate the phasor coordinate of dataset against the provided calibration.
+		"""
+		self.dataset.real, self.dataset.imag = calibration.compute_calibrated_phasor(self.dataset.real, self.dataset.imag)
 
 	## ------ Internal ------ ##
+	def _add_image(self) -> None:
+		if self.dataset is None or self.dataset.mean is None:
+			return
+		sig = self.dataset.signal
+		name = self.dataset.name
+		self.viewer.add_image(sig, axis_labels=sig.dims, name=name+".raw")
+
 	def _on_removal(self) -> None:
 		if not (self._list and self._item):
 			raise RuntimeError("Something is very wrong")
@@ -170,14 +174,14 @@ class SampleManagerWidget(QWidget):
 		load_row.addWidget(self.btn_browse_file)
 
 		# Control buttons
-		self.btn_compute = QPushButton("Calculate selected")
-		self.btn_compute.clicked.connect(self._on_compute_selected)
-		self.btn_compute.setEnabled(False)
+		self.btn_calibrate = QPushButton("Calibrate selected")
+		self.btn_calibrate.clicked.connect(self._on_calibrate_selected)
+		self.btn_calibrate.setEnabled(False)
 		self.btn_visualize = QPushButton("Visualize selected")
 		self.btn_visualize.clicked.connect(self._on_visualize_selected)
 		self.btn_visualize.setEnabled(False)
 		button_row = QHBoxLayout()
-		button_row.addWidget(self.btn_compute)
+		button_row.addWidget(self.btn_calibrate)
 		button_row.addWidget(self.btn_visualize)
 
 		# Dataset list
@@ -237,16 +241,16 @@ class SampleManagerWidget(QWidget):
 		Disable the buttons if no item is selected.
 		"""
 		has_selected = len(self.dataset_list.selectedItems())>0
-		self.btn_compute.setEnabled(has_selected)
+		self.btn_calibrate.setEnabled(has_selected)
 		self.btn_visualize.setEnabled(has_selected)
 
-	def _on_compute_selected(self) -> None:
+	def _on_calibrate_selected(self) -> None:
 		"""
 		Get the DatasetRow widget in the list items and make them compute phasor given the calibration.
 		"""
 		rows = self.get_selected_rows()
 		for r in rows:
-			r.compute_phasor(self.calibration)
+			r.calibrate_phasor(self.calibration)
 	
 	def _on_visualize_selected(self) -> None:
 		"""

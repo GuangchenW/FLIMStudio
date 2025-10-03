@@ -67,9 +67,9 @@ class CalibrationWidget(QWidget):
 		self.ref_lifetime.set_suffix("ns")
 		self.ref_lifetime.set_value(4, as_default=True)
 		# Calibration button
-		self.btn_calibrate = QPushButton("Calibrate")
-		self.btn_calibrate.clicked.connect(self._on_calibration_btn_pressed)
-		self.btn_calibrate.setEnabled(False)
+		self.btn_compute = QPushButton("Compute calibration")
+		self.btn_compute.clicked.connect(self._on_calibration_btn_pressed)
+		self.btn_compute.setEnabled(False)
 		# Calibration parameters
 		self.phase_shift = AutoDoubleSpinBox()
 		self.modulation_shift = AutoDoubleSpinBox()
@@ -83,7 +83,7 @@ class CalibrationWidget(QWidget):
 		form.addRow(self.le_ref_status)
 		form.addRow("Laser freq.", self.laser_freq)
 		form.addRow("Ref. lifetime", self.ref_lifetime)
-		form.addRow(self.btn_calibrate)
+		form.addRow(self.btn_compute)
 		form.addRow("Phase", self.phase_shift)
 		form.addRow("Modulation", self.modulation_shift)
 
@@ -121,7 +121,7 @@ class CalibrationWidget(QWidget):
 			self.laser_freq.set_value(freq)
 
 		# Finally, enable the calibration button
-		self.btn_calibrate.setEnabled(True) 
+		self.btn_compute.setEnabled(True) 
 		
 	def _on_calibration_btn_pressed(self) -> None:
 		frequency = self.laser_freq.value()
