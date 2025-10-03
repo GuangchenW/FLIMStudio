@@ -119,9 +119,22 @@ class DatasetRow(QWidget):
 	def _add_image(self) -> None:
 		if self.dataset is None or self.dataset.mean is None:
 			return
-		sig = self.dataset.signal
 		name = self.dataset.name
-		self.viewer.add_image(sig, axis_labels=sig.dims, name=name+".raw")
+		self.viewer.add_image(self.dataset.mean, name=name+".mean")
+		# Add raw signal, i.e. HYX 3D signal
+		# NOTE: axis_label is not shown in napari UI, it is internal only
+		# WARNING: adding the 3D raw data causes axis order conflicts between data formats,
+		# also the H dimension has weird behavior when there are multiple datsets with varying
+		# H length. So it is best to just use averaged signal for now.
+		"""
+		self.viewer.add_image(
+			self.dataset.signal,
+			axis_labels=self.dataset.signal.dims,
+			name=name+".raw",
+			visible=False
+		)
+		"""
+
 
 	def _on_removal(self) -> None:
 		if not (self._list and self._item):
