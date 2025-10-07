@@ -45,6 +45,12 @@ class Dataset:
 	mean: Optional[np.ndarray] = None # Average signal
 	real: Optional[np.ndarray] = None # Real phasor coords
 	imag: Optional[np.ndarray] = None # Imaginary phasor coords
+	g: Optional[np.ndarray] = None # Processed real coords, exactly as in graph
+	s: Optional[np.ndarray] = None # Processed real coords, exactly as in graph
+
+	def reset_gs(self) -> None:
+		self.g = self.real.copy()
+		self.s = self.imag.copy()
 
 class DatasetRow(QWidget):
 	show_clicked = Signal()
@@ -113,6 +119,7 @@ class DatasetRow(QWidget):
 		Compute the uncalibrated phasor.
 		"""
 		self.dataset.mean, self.dataset.real, self.dataset.imag = phasor_from_signal(self.dataset.signal, axis='H')
+		self.dataset.reset_gs()
 
 	def calibrate_phasor(self, calibration:Calibration) -> None:
 		"""

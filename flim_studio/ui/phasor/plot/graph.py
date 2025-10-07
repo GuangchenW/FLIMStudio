@@ -113,7 +113,10 @@ class PhasorGraphWidget(QWidget):
 		# Photon sum filter
 		labels = photon_range_mask(dataset.signal.sum(dim='H'), min_photon_count, max_photon_count)
 		mask = (labels == 1)
-		# Finalize
+		# Set filtered pixels to 0, this is to maintain shape 
+		g[~mask] = 0; s[~mask] = 0
+		dataset.g = g; dataset.s = s
+		# Slice only meaningful values for efficient plotting
 		g = g[mask]; s = s[mask]
 		match mode:
 			case "scatter":

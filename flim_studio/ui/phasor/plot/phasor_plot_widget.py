@@ -63,9 +63,13 @@ class PhasorPlotWidget(QWidget):
 
 	## ------ Internal ------ ##
 	def _on_map_roi(self) -> None:
+		"""
+		Get the list of ROIs, make label and add layer for each dataset.
+		Uses the processed (filtered) g, s coords instead of raw real, imag.
+		"""
 		roi_list = self.roi_manager.collect_roi()
 		for ds in self._datasets:
-			labels = labels_from_roi(ds.real, ds.imag, roi_list)
+			labels = labels_from_roi(ds.g, ds.s, roi_list)
 			LayerManager().add_label(labels, name=ds.name+".roi", overwrite=True)
 
 	def _on_plot_phasor(self) -> None:
