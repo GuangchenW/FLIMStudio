@@ -27,8 +27,12 @@ from qtpy.QtWidgets import (
 	QStyle
 )
 
-from flim_studio.core.calibration import Calibration
-from flim_studio.core.io import load_signal
+from flim_studio.core import (
+	load_signal,
+	Calibration,
+	LayerType,
+	LayerManager,
+)
 from flim_studio.ui.custom import RemoveButton
 from .plot import PhasorPlotWidget
 
@@ -89,8 +93,9 @@ class DatasetRow(QWidget):
 			btn.setIcon(icon)
 
 		btn.setCheckable(True)
+		btn.setChecked(True)
 		apply_icons() # Initialize the icons
-		btn.setToolTip("Show average signal as image.")
+		btn.setToolTip("Show/unshow mean image.")
 		# Keep in sync with theme
 		viewer.events.theme.connect(apply_icons)
 		return btn
@@ -119,22 +124,12 @@ class DatasetRow(QWidget):
 	def _add_image(self) -> None:
 		if self.dataset is None or self.dataset.mean is None:
 			return
-		name = self.dataset.name
-		self.viewer.add_image(self.dataset.mean, name=name+".mean")
 		# Add raw signal, i.e. HYX 3D signal
 		# NOTE: axis_label is not shown in napari UI, it is internal only
 		# WARNING: adding the 3D raw data causes axis order conflicts between data formats,
 		# also the H dimension has weird behavior when there are multiple datsets with varying
 		# H length. So it is best to just use averaged signal for now.
-		"""
-		self.viewer.add_image(
-			self.dataset.signal,
-			axis_labels=self.dataset.signal.dims,
-			name=name+".raw",
-			visible=False
-		)
-		"""
-
+		LayerManager().add_image(self.dataset.name, self.dataset.mean)
 
 	def _on_removal(self) -> None:
 		if not (self._list and self._item):
@@ -150,10 +145,10 @@ class DatasetRow(QWidget):
 		# we have a separate button for visualization.
 		if self.btn_show.isChecked():
 			# Show
-			pass
+			self._add_image()
 		else:
-			# Hide
-			pass
+			# Unshow
+			LayerManager().remove_layer(self.dataset.name, LayerType.IMAGE)
 
 class SampleManagerWidget(QWidget):
 	def __init__(

@@ -15,7 +15,8 @@ from qtpy.QtCore import Qt
 import numpy as np
 from napari import Viewer
 
-from ..config.defaults import Defaults
+from flim_studio.config.defaults import Defaults
+from flim_studio.core import LayerManager
 
 # HACK: Gotta clean up imports at some point
 from .phasor.calibration_widget import CalibrationWidget
@@ -26,6 +27,7 @@ class PhasorAnalysis(QWidget):
 		super().__init__()
 		self.viewer = viewer
 		self.setWindowTitle("Phasor Analysis")
+		LayerManager(self.viewer) # Initialize layer manager singleton
 		self.defaults = Defaults()
 		self._signal = None
 		self._phasor = None
