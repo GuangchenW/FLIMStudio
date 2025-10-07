@@ -32,9 +32,28 @@ class LayerManager:
 		self.layer_data = {}
 
 	## ------ Public API ------ ##
-	def add_image(self, name:str, image:np.ndarray, overwrite:bool=False, **kwarg) -> None:
-		self.layer_data.setdefault(name, {})[LayerType.IMAGE] = image
-		self._update_layer(name, LayerType.IMAGE)
+	def add_layer(self, data:np.ndarray, *, name:str, kind:LayerType, overwrite:bool=False, **kwargs) -> None:
+		"""
+		Add a new napari layer or overwrite an existing one. 
+		"""
+		# If no data registered yet, register in dict.
+		# Or, if data registered and overwrite, replace data.
+		if self.get_layer_data(name, kind) is None or overwrite:
+			self.layer_data.setdefault(name, {})[kind] = data
+		# Check if layer already exists
+		layer = self._find_layer(name, kind)
+		if layer is None:
+			# If no layer exists, add layer anyway
+			self._add_layer(data, name, kind, **kwargs)
+		elif overwrite:
+			# if layer exists, update only if overwrite
+			layer.data = self.get_layer_data(name, kind)
+
+	def add_image(self, data:np.ndarray, *, name:str, overwrite:bool=False, **kwargs) -> None:
+		self.add_layer(data, name=name, kind=LayerType.IMAGE, overwrite=overwrite, **kwargs)
+
+	def add_label(self, data:np.ndarray, *, name:str, overwrite:bool=False, **kwargs) -> None:
+		self.add_layer(data, name=name, kind=LayerType.LABEL, overwrite=overwrite, **kwargs)
 
 	def get_layer_data(self, name:str, kind:LayerType) -> np.ndarray:
 		"""
@@ -49,7 +68,8 @@ class LayerManager:
 		Remove the first layer with the given metadata key.
 		"""
 		layer = self._find_layer(name, kind)
-		print(layer)
+		# This safely handles when user removed layer using built-in UI
+		# and then uses the plugin buttons in data row.
 		if layer is not None:
 			self.viewer.layers.remove(layer)
 
@@ -63,13 +83,6 @@ class LayerManager:
 			}
 		}
 
-	def _update_layer(self, name:str, kind:LayerType, overwrite:bool=False) -> None:
-		layer = self._find_layer(name, kind)
-		if layer is None:
-			self._add_layer(name, kind)
-		elif overwrite:
-			layer.data = self.get_layer_data(name, kind)
-
 	def _find_layer(self, name:str, kind:LayerType) -> "napari.layers.Layer":
 		"""
 		Iterate through all layers and find first that has matching metadata.
@@ -81,18 +94,15 @@ class LayerManager:
 				return lyr
 		return None
 
-	def _add_layer(self, name:str, kind:LayerType) -> None:
+	def _add_layer(self, data:np.ndarray, name:str, kind:LayerType, **kwargs) -> None:
 		"""
-		Add a layer using the ndarray keyed by name and kind.
-		Assumes the data has been registered in layer_data.
+		Helper function for add_layer. Performs the actual layer adding.
 		"""
-		layer_data = self.get_layer_data(name, kind)
-		if layer_data is None: return
 		# Make metadata
 		tag = self._make_tag(name, kind)
+		# Add layer
 		match kind:
 			case LayerType.IMAGE:
-				self.viewer.add_image(layer_data, name=name, metadata=tag)
+				self.viewer.add_image(data, name=name, metadata=tag, **kwargs)
 			case LayerType.LABEL:
-				pass
-		print(type(self.viewer.layers))
+				self.viewer.add_labels(data, name=name, metadata=tag, **kwargs)

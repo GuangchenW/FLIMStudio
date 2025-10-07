@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import Optional, Tuple, TYPE_CHECKING
+from typing import Optional, List, Tuple, TYPE_CHECKING
+from dataclasses import dataclass
 from matplotlib.patches import Circle
 from qtpy.QtWidgets import (
 	QWidget,
@@ -17,6 +18,13 @@ from flim_studio.ui.custom import RemoveButton, ColorButton
 if TYPE_CHECKING:
 	from matplotlib.axes import Axes
 
+@dataclass
+class Roi:
+	name: str # ROI name
+	real: float # center real
+	imag: float # center imaginary
+	radius: float # radius
+	color: str # Hex color string
 
 class RoiRowWidget(QWidget):
 	"""
@@ -85,6 +93,19 @@ class RoiRowWidget(QWidget):
 				self._circle.remove()
 			self._circle = None
 			self._draw_idle()
+
+	def to_data(self) -> Roi:
+		"""
+		Return roi as data struct.
+		"""
+		data = Roi(
+			name = self.name,
+			real = self._circle.center[0],
+			imag = self._circle.center[1],
+			radius = self._circle.radius,
+			color = self.btn_color.get_color()
+		)
+		return data
 
 	def bind(self, wlist:QListWidget, item:QListWidgetItem) -> None:
 		self._list = wlist
@@ -176,7 +197,21 @@ class RoiManagerWidget(QWidget):
 		if not item: return
 
 		roi_row = self.roi_list.itemWidget(item)
-		roi_row.move_circle(real, imag) 
+		roi_row.move_circle(real, imag)
+
+	def collect_roi(self) -> List[Roi]:
+		"""
+		Return a List of all existing ROI data in this manager.
+		"""
+		out = []
+		for i in range(self.roi_list.count()):
+			item = self.roi_list.item(i)
+			widget = self.roi_list.itemWidget(item)
+			if not widget: continue
+
+			data = widget.to_data()
+			out.append(data)
+		return out
 
 	## ------ Internal ------ ##
 	def _on_add_roi(self) -> None:

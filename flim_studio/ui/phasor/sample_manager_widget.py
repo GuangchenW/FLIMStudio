@@ -129,7 +129,7 @@ class DatasetRow(QWidget):
 		# WARNING: adding the 3D raw data causes axis order conflicts between data formats,
 		# also the H dimension has weird behavior when there are multiple datsets with varying
 		# H length. So it is best to just use averaged signal for now.
-		LayerManager().add_image(self.dataset.name, self.dataset.mean)
+		LayerManager().add_image(self.dataset.mean, name=self.dataset.name)
 
 	def _on_removal(self) -> None:
 		if not (self._list and self._item):

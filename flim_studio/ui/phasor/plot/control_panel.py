@@ -25,6 +25,7 @@ class PhasorControlPanel(QGroupBox):
 	The user may select a non-empty subset from the list to work with.
 	"""
 	plotPhasor = Signal()
+	mapRoi = Signal()
 
 	def __init__(
 		self,
@@ -78,7 +79,10 @@ class PhasorControlPanel(QGroupBox):
 		# Last row: Draw button
 		self.btn_draw = QPushButton("Draw")
 		self.btn_draw.clicked.connect(self._on_btn_draw_clicked)
-		ctrl_grid.addWidget(self.btn_draw, 4, 1, 1, 4)
+		self.btn_map = QPushButton("Map ROI")
+		self.btn_map.clicked.connect(self._on_btn_map_clicked)
+		ctrl_grid.addWidget(self.btn_draw, 4, 1, 1, 2)
+		ctrl_grid.addWidget(self.btn_map, 4, 3, 1, 2)
 
 		# --- Right side: dataset management
 		# A list widget where user can select dataset(s) to draw on the plot
@@ -122,6 +126,9 @@ class PhasorControlPanel(QGroupBox):
 	## ------ Internal ------ ##
 	def _on_btn_draw_clicked(self) -> None:
 		self.plotPhasor.emit()
+
+	def _on_btn_map_clicked(self) -> None:
+		self.mapRoi.emit()
 
 	def _on_selection_changed(self) -> None:
 		"""

@@ -8,6 +8,7 @@ from qtpy.QtWidgets import (
 	QVBoxLayout,
 )
 
+from flim_studio.core import LayerManager, labels_from_roi
 from .graph import PhasorGraphWidget
 from .control_panel import PhasorControlPanel
 from .roi_manager import RoiManagerWidget
@@ -42,6 +43,7 @@ class PhasorPlotWidget(QWidget):
 		# Parameters control panel
 		self.control_panel = PhasorControlPanel(self._datasets)
 		self.control_panel.plotPhasor.connect(self._on_plot_phasor)
+		self.control_panel.mapRoi.connect(self._on_map_roi)
 		root.addWidget(self.control_panel)
 
 		# Phasor plot and roi management
@@ -60,6 +62,12 @@ class PhasorPlotWidget(QWidget):
 		self.phasor_graph_widget.canvasClicked.connect(self.roi_manager.move_selected_roi)
 
 	## ------ Internal ------ ##
+	def _on_map_roi(self) -> None:
+		roi_list = self.roi_manager.collect_roi()
+		for ds in self._datasets:
+			labels = labels_from_roi(ds.real, ds.imag, roi_list)
+			LayerManager().add_label(labels, name=ds.name+".roi", overwrite=True)
+
 	def _on_plot_phasor(self) -> None:
 		datasets = self.control_panel.get_selected_datasets()
 		params = self.control_panel.get_params()
