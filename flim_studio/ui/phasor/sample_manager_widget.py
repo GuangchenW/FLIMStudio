@@ -125,6 +125,9 @@ class DatasetRow(QWidget):
 		"""
 		Calibrate the phasor coordinate of dataset against the provided calibration.
 		"""
+		# TODO: Fix the bg where phasor can be calibrated multipe times.
+		# To do this, we probably need to store three instance of data:
+		# raw real, imag; calibrated real, imag; filtered g, s
 		self.dataset.real, self.dataset.imag = calibration.compute_calibrated_phasor(self.dataset.real, self.dataset.imag)
 
 	## ------ Internal ------ ##
