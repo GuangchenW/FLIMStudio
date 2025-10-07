@@ -38,7 +38,7 @@ class RoiRowWidget(QWidget):
 		viewer: "napari.Viewer",
 		*,
 		center: Tuple[float, float] = (0.5, 0.5),
-		radius: float = 0.1,
+		radius: float = 0.05,
 		color: str = "#ff0000",
 		parent: QWidget | None = None,
 	) -> None:
@@ -51,7 +51,7 @@ class RoiRowWidget(QWidget):
 		self._circle: Circle|None = None
 
 		self._build_ui(radius, color)
-		self._create_circle(center=self._center, radius=radius, color=color)
+		self._create_circle(center=center, radius=radius, color=color)
 
 	## ------ UI ------ ##
 	def _build_ui(self, init_radius:float, init_color:str) -> None:
