@@ -14,6 +14,8 @@ from qtpy.QtWidgets import (
 	QListWidgetItem
 )
 
+import matplotlib.pyplot as plt
+
 if TYPE_CHECKING:
 	from .sample_manager_widget import Dataset
 
@@ -76,6 +78,14 @@ class PhasorControlPanel(QGroupBox):
 		self.mode_combo_box.addItem("hist2d")
 		ctrl_grid.addWidget(mode_label, 3, 1)
 		ctrl_grid.addWidget(self.mode_combo_box, 3, 2)
+		cmap_label = QLabel("Color map")
+		self.cmap_combo_box = QComboBox()
+		cmap_names = plt.colormaps()
+		for name in cmap_names:
+			self.cmap_combo_box.addItem(name)
+		self.cmap_combo_box.setCurrentText("jet")
+		ctrl_grid.addWidget(cmap_label, 3, 3)
+		ctrl_grid.addWidget(self.cmap_combo_box, 3, 4)
 		# Last row: Draw button
 		self.btn_draw = QPushButton("Draw")
 		self.btn_draw.clicked.connect(self._on_btn_draw_clicked)
@@ -121,6 +131,7 @@ class PhasorControlPanel(QGroupBox):
 		params["median_filter_size"] = self.kernel_size.value()
 		params["median_filter_repetition"] = self.repetition.value()
 		params["mode"] = self.mode_combo_box.currentText()
+		params["cmap"] = self.cmap_combo_box.currentText()
 		return params
 
 	## ------ Internal ------ ##

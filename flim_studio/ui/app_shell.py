@@ -43,6 +43,8 @@ class PhasorAnalysis(QWidget):
 
 		cal_widget = CalibrationWidget(self)
 		sample_manager_widget = SampleManagerWidget(self.viewer, cal_widget.get_calibration(), self)
+		# HACK: I don't like it is doing this here. Maybe move the entire cal widget reference into sample manager
+		cal_widget.calibrationChanged.connect(sample_manager_widget._mark_all_stale)
 		layout.addWidget(cal_widget)
 		layout.addWidget(sample_manager_widget)
 

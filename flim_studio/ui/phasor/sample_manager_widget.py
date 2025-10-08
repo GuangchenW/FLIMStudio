@@ -175,6 +175,13 @@ class DatasetRow(QWidget):
 		self.dataset.calibrate_phasor(calibration)
 		self.indicator.set_state("ok")
 
+	def mark_stale(self) -> None:
+		"""
+		Mark this dataset as stale (calibration has changed).
+		"""
+		if self.indicator.state() == "ok":
+			self.indicator.set_state("warn")
+
 	## ------ Internal ------ ##
 	def _on_removal(self) -> None:
 		if not (self._list and self._item):
@@ -334,3 +341,9 @@ class SampleManagerWidget(QWidget):
 		phasor_plot_dock = self.viewer.window.add_dock_widget(phasor_plot_widget, name="Phasor Plot", area="bottom")
 		phasor_plot_dock.setFloating(True)
 		phasor_plot_dock.setAllowedAreas(Qt.NoDockWidgetArea)
+
+	def _mark_all_stale(self) -> None:
+		for i in range(self.dataset_list.count()):
+			item = self.dataset_list.item(i)
+			row = self.dataset_list.itemWidget(item)
+			row.mark_stale()

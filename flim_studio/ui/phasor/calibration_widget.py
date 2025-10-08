@@ -22,6 +22,8 @@ class CalibrationWidget(QWidget):
 	"""
 	UI for loading a reference file for phasor calibration.
 	"""
+	calibrationChanged = Signal()
+
 	def __init__(self, parent:Optional[QWidget]=None) -> None:
 		super().__init__(parent)
 		self._ref_path: str = ""
@@ -130,3 +132,4 @@ class CalibrationWidget(QWidget):
 		phi, m = self.calibration.get_calibration()
 		self.phase_shift.set_value(phi)
 		self.modulation_shift.set_value(m)
+		self.calibrationChanged.emit()

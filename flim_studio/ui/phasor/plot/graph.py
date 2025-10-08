@@ -94,7 +94,7 @@ class PhasorGraphWidget(QWidget):
 		median_filter_size: int = 3,
 		median_filter_repetition: int = 0,
 		mode:Literal["scatter","hist2d","contour"] = "contour",
-		color = None
+		cmap:str = "jet",
 	) -> None:
 		"""
 		Plot the given dataset.
@@ -124,9 +124,9 @@ class PhasorGraphWidget(QWidget):
 			case "scatter":
 				self._pp.plot(g, s, fmt='.')
 			case "hist2d":
-				self._pp.hist2d(g, s)
+				self._pp.hist2d(g, s, cmap=cmap)
 			case "contour":
-				self._pp.contour(g, s)
+				self._pp.contour(g, s, cmap=cmap)
 
 	def draw_idle(self) -> None:
 		"""Schedule canvas changes to be rendered."""
