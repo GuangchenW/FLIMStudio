@@ -2,6 +2,8 @@ from typing import Dict, List, Tuple, Optional, TYPE_CHECKING
 from enum import Enum
 import numpy as np
 
+from napari.utils import DirectLabelColormap
+
 if TYPE_CHECKING:
 	import napari
 
@@ -48,12 +50,17 @@ class LayerManager:
 		elif overwrite:
 			# if layer exists, update only if overwrite
 			layer.data = self.get_layer_data(name, kind)
+			# If it is label layer, we need to update colormap as well
+			if kind == LayerType.LABEL:
+				cmap = kwargs.pop("colormap", None)
+				if cmap: layer.colormap = cmap
 
 	def add_image(self, data:np.ndarray, *, name:str, overwrite:bool=False, **kwargs) -> None:
 		self.add_layer(data, name=name, kind=LayerType.IMAGE, overwrite=overwrite, **kwargs)
 
-	def add_label(self, data:np.ndarray, *, name:str, overwrite:bool=False, **kwargs) -> None:
-		self.add_layer(data, name=name, kind=LayerType.LABEL, overwrite=overwrite, **kwargs)
+	def add_label(self, data:np.ndarray, *, name:str, cdict:dict=None, overwrite:bool=False, **kwargs) -> None:
+		cmap = DirectLabelColormap(color_dict=cdict) if cdict else None
+		self.add_layer(data, name=name, kind=LayerType.LABEL, overwrite=overwrite, colormap=cmap, **kwargs)
 
 	def get_layer_data(self, name:str, kind:LayerType) -> np.ndarray:
 		"""

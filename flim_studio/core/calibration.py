@@ -15,7 +15,7 @@ class Calibration:
 
 		# Laser frequency of used for calibration
 		# (not necessarily from metadata, may be set by user)
-		self.frequency: float|None = None
+		self.frequency: float = 0.0
 		self.phase_zero: float = 0.0 # phi calibration
 		self.modulation_zero: float = 1.0 # m calibration
 

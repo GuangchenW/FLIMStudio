@@ -106,6 +106,7 @@ class PhasorGraphWidget(QWidget):
 		:param mode: Plotting mode. Accepts plot, hist2d, contour. Default contour.
 		:param color: Plot color. 
 		"""
+		# HACK: Somewhat hacky, prob better to move this into the Dataset class
 		# Median filter
 		m = dataset.mean; g = dataset.real_calibrated; s = dataset.imag_calibrated
 		if median_filter_repetition > 0:
@@ -116,6 +117,7 @@ class PhasorGraphWidget(QWidget):
 		# Set filtered pixels to 0, this is to maintain shape 
 		g[~mask] = 0; s[~mask] = 0
 		dataset.g = g; dataset.s = s
+		dataset.compute_lifetime_estimates()
 		# Slice only meaningful values for efficient plotting
 		g = g[mask]; s = s[mask]
 		match mode:

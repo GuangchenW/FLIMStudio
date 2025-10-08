@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 from phasorpy.phasor import phasor_from_signal
+from phasorpy.lifetime import phasor_to_apparent_lifetime, phasor_to_normal_lifetime
 if TYPE_CHECKING:
 	import xarray
 	import napari
@@ -19,6 +20,7 @@ from qtpy.QtWidgets import (
 	QFormLayout,
 	QPushButton,
 	QLineEdit,
+	QComboBox,
 	QFileDialog,
 	QLabel,
 	QSpinBox,
@@ -33,7 +35,7 @@ from flim_studio.core import (
 	LayerType,
 	LayerManager,
 )
-from flim_studio.ui.custom import RemoveButton
+from flim_studio.ui.custom import RemoveButton, Indicator
 from .plot import PhasorPlotWidget
 
 @dataclass
@@ -42,6 +44,7 @@ class Dataset:
 	name: str
 	channel: int
 	signal: "xarray.DataArray"
+	frequency: float = field(init=False) # Last used frequency
 	mean: np.ndarray = field(init=False) # Mean signal
 	real_raw: np.ndarray = field(init=False) # Raw real phasor
 	imag_raw: np.ndarray = field(init=False) # Raw imaginary phasor
@@ -49,14 +52,17 @@ class Dataset:
 	imag_calibrated: np.ndarray = field(init=False) # Calibrated imaginary phasor
 	g: np.ndarray = field(init=False) # Processed real coords, exactly as in graph
 	s: np.ndarray = field(init=False) # Processed imaginary coords, exactly as in graph
-	phase_lifetime: np.ndarray = field(init=False)
-	modulation_lifetime: np.ndarray = field(init=False)
+	phase_lifetime: np.ndarray = field(init=False) # Apparent phase lifetime
+	modulation_lifetime: np.ndarray = field(init=False) # Apparent modulation lifetime
+	normal_lifetime: np.ndarray = field(init=False) # Projected lifetime
 
 	def compute_phasor(self) -> None:
 		"""
-		Compute mean, real and imag, then sync all downstream attributes.
+		Compute mean, real and imag, then sync all downstream properties.
 		"""
 		self.mean, self.real_raw, self.imag_raw = phasor_from_signal(self.signal, axis='H')
+		self.frequency = self.signal.attrs.get("frequency", 0)
+		# Calibrate without calibration to init other properties
 		self.calibrate_phasor()
 
 	def calibrate_phasor(self, calibration:Calibration=None) -> None:
@@ -67,11 +73,24 @@ class Dataset:
 			self.imag_calibrated = self.imag_raw
 		self.g = self.real_calibrated
 		self.s = self.imag_calibrated
+		# Every time we re-calibrate, re-compute lifetime estimates
+		if calibration and calibration.frequency > 0:
+			self.frequency = calibration.frequency
+		self.compute_lifetime_estimates()
 
-	def compute_apparent_lifetime(self, frequency:float) -> None:
-		if frequency <= 0:
-			raise ValueError("Frequency must be greater than 0")
+	def compute_lifetime_estimates(self) -> None:
+		"""
+		Compute and cache apparent and projected lifetime.
+		"""
+		frequency = self.frequency if self.frequency > 0 else 80
+		self._compute_apparent_lifetime(frequency)
+		self._compute_normal_lifetime(frequency)
 
+	def _compute_apparent_lifetime(self, frequency:float) -> None:
+		self.phase_lifetime, self.modulation_lifetime = phasor_to_apparent_lifetime(self.g, self.s, frequency=frequency)
+
+	def _compute_normal_lifetime(self, frequency:float) -> None:
+		self.normal_lifetime = phasor_to_normal_lifetime(self.g, self.s, frequency=frequency)
 
 class DatasetRow(QWidget):
 	show_clicked = Signal()
@@ -104,10 +123,23 @@ class DatasetRow(QWidget):
 		self.btn_delete.clicked.connect(self._on_removal)
 		self.btn_show = self._make_show_button(self.viewer)
 		self.btn_show.clicked.connect(self._on_show)
+		# Dropbox for selecting the lifetime to visualize
+		self.lifetime_combo_box = QComboBox()
+		self.lifetime_combo_box.setToolTip((
+			"Select lifetime estimations.\n'non': original signal\n'phi': apparent phase lifetime\n"
+			"'M': apparent modulation lifetime\nproj: projected lifetime"
+		))
+		self.lifetime_combo_box.addItem("none")
+		self.lifetime_combo_box.addItem("phi")
+		self.lifetime_combo_box.addItem("M")
+		self.lifetime_combo_box.addItem("proj")
+		# Indicator for calibration status
+		self.indicator = Indicator()
 		# Since I am too lazy to implement a confirm delete dialog,
 		# put label in the middle to prevent missclick of buttons
 		layout.addWidget(self.btn_delete, 0)
 		layout.addWidget(self.label, 1)
+		layout.addWidget(self.lifetime_combo_box, 0)
 		layout.addWidget(self.btn_show, 0)
 
 	def _make_show_button(self, viewer) -> QPushButton:
@@ -120,10 +152,8 @@ class DatasetRow(QWidget):
 			icon.addFile(f"theme_{theme}:/new_image.svg", mode=QIcon.Normal, state=QIcon.Off)
 			btn.setIcon(icon)
 
-		btn.setCheckable(True)
-		btn.setChecked(True)
 		apply_icons() # Initialize the icons
-		btn.setToolTip("Show/unshow mean image.")
+		btn.setToolTip("Show estimated lifetime")
 		# Keep in sync with theme
 		viewer.events.theme.connect(apply_icons)
 		return btn
@@ -143,16 +173,6 @@ class DatasetRow(QWidget):
 		self.dataset.calibrate_phasor(calibration)
 
 	## ------ Internal ------ ##
-	def _add_image(self) -> None:
-		if self.dataset is None or self.dataset.mean is None:
-			return
-		# Add raw signal, i.e. HYX 3D signal
-		# NOTE: axis_label is not shown in napari UI, it is internal only
-		# WARNING: adding the 3D raw data causes axis order conflicts between data formats,
-		# also the H dimension has weird behavior when there are multiple datsets with varying
-		# H length. So it is best to just use averaged signal for now.
-		LayerManager().add_image(self.dataset.mean, name=self.dataset.name)
-
 	def _on_removal(self) -> None:
 		if not (self._list and self._item):
 			raise RuntimeError("Something is very wrong")
@@ -163,12 +183,27 @@ class DatasetRow(QWidget):
 		# TODO: Remove the associated layers?
 
 	def _on_show(self) -> None:
-		if self.btn_show.isChecked():
-			# Show
-			self._add_image()
-		else:
-			# Unshow
-			LayerManager().remove_layer(self.dataset.name, LayerType.IMAGE)
+		# Show lifetime map
+		match self.lifetime_combo_box.currentText():
+			case "none":
+				LayerManager().add_image(self.dataset.mean, name=self.dataset.name, overwrite=True)
+			case "phi":
+				LayerManager().add_image(self.dataset.phase_lifetime, name=self.dataset.name, overwrite=True)
+			case "M":
+				LayerManager().add_image(self.dataset.modulation_lifetime, name=self.dataset.name, overwrite=True)
+			case "proj":
+				LayerManager().add_image(self.dataset.normal_lifetime, name=self.dataset.name, overwrite=True)
+
+	# Obsolete
+	def _add_image(self) -> None:
+		if self.dataset is None or self.dataset.mean is None:
+			return
+		# Add raw signal, i.e. HYX 3D signal
+		# NOTE: axis_label is not shown in napari UI, it is internal only
+		# WARNING: adding the 3D raw data causes axis order conflicts between data formats,
+		# also the H dimension has weird behavior when there are multiple datsets with varying
+		# H length. So it is best to just use averaged signal for now.
+		LayerManager().add_image(self.dataset.mean, name=self.dataset.name)
 
 class SampleManagerWidget(QWidget):
 	def __init__(
@@ -257,7 +292,7 @@ class SampleManagerWidget(QWidget):
 			ds = Dataset(path=path, name=name, channel=selected_channel, signal=signal)
 
 			item = QListWidgetItem(self.dataset_list)
-			row = DatasetRow(f"{name} (channel {selected_channel})", ds, self.viewer)
+			row = DatasetRow(f"{name} (C{selected_channel})", ds, self.viewer)
 			row.bind(self.dataset_list, item) 
 			item.setSizeHint(row.sizeHint())
 			self.dataset_list.addItem(item)

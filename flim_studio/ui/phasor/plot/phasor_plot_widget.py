@@ -7,6 +7,7 @@ from qtpy.QtWidgets import (
 	QHBoxLayout,
 	QVBoxLayout,
 )
+from matplotlib.colors import to_rgb
 
 from flim_studio.core import LayerManager, labels_from_roi
 from .graph import PhasorGraphWidget
@@ -68,9 +69,12 @@ class PhasorPlotWidget(QWidget):
 		Uses the processed (filtered) g, s coords instead of raw real, imag.
 		"""
 		roi_list = self.roi_manager.collect_roi()
+		color_dict = { None:(0,0,0) }
+		for i, roi in enumerate(roi_list):
+			color_dict[i+1] = to_rgb(roi.color) # Covert to 0-1 float RGB tuple
 		for ds in self._datasets:
 			labels = labels_from_roi(ds.g, ds.s, roi_list)
-			LayerManager().add_label(labels, name=ds.name+".roi", overwrite=True)
+			LayerManager().add_label(labels, name=ds.name+".roi", cdict=color_dict, overwrite=True)
 
 	def _on_plot_phasor(self) -> None:
 		datasets = self.control_panel.get_selected_datasets()
