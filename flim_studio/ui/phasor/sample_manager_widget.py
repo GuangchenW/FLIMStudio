@@ -135,12 +135,14 @@ class DatasetRow(QWidget):
 		self.lifetime_combo_box.addItem("proj")
 		# Indicator for calibration status
 		self.indicator = Indicator()
+		self.indicator.set_state("bad")
 		# Since I am too lazy to implement a confirm delete dialog,
 		# put label in the middle to prevent missclick of buttons
 		layout.addWidget(self.btn_delete, 0)
 		layout.addWidget(self.label, 1)
 		layout.addWidget(self.lifetime_combo_box, 0)
 		layout.addWidget(self.btn_show, 0)
+		layout.addWidget(self.indicator, 0)
 
 	def _make_show_button(self, viewer) -> QPushButton:
 		btn = QPushButton()
@@ -171,6 +173,7 @@ class DatasetRow(QWidget):
 		Calibrate the phasor coordinate of dataset against the provided calibration.
 		"""
 		self.dataset.calibrate_phasor(calibration)
+		self.indicator.set_state("ok")
 
 	## ------ Internal ------ ##
 	def _on_removal(self) -> None:
