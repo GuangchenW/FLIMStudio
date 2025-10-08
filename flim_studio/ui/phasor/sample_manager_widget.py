@@ -49,6 +49,8 @@ class Dataset:
 	imag_calibrated: np.ndarray = field(init=False) # Calibrated imaginary phasor
 	g: np.ndarray = field(init=False) # Processed real coords, exactly as in graph
 	s: np.ndarray = field(init=False) # Processed imaginary coords, exactly as in graph
+	phase_lifetime: np.ndarray = field(init=False)
+	modulation_lifetime: np.ndarray = field(init=False)
 
 	def compute_phasor(self) -> None:
 		"""
@@ -65,6 +67,11 @@ class Dataset:
 			self.imag_calibrated = self.imag_raw
 		self.g = self.real_calibrated
 		self.s = self.imag_calibrated
+
+	def compute_apparent_lifetime(self, frequency:float) -> None:
+		if frequency <= 0:
+			raise ValueError("Frequency must be greater than 0")
+
 
 class DatasetRow(QWidget):
 	show_clicked = Signal()
