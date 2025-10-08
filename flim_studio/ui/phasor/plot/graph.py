@@ -107,7 +107,7 @@ class PhasorGraphWidget(QWidget):
 		:param color: Plot color. 
 		"""
 		# Median filter
-		m = dataset.mean; g = dataset.real; s = dataset.imag
+		m = dataset.mean; g = dataset.real_calibrated; s = dataset.imag_calibrated
 		if median_filter_repetition > 0:
 			m,g,s = phasor_filter_median(m, g, s, repeat=median_filter_repetition, size=median_filter_size)
 		# Photon sum filter

@@ -1,12 +1,12 @@
 import os
 from pathlib import Path
 from typing import Dict, Optional, List, TYPE_CHECKING
-from dataclasses import dataclass
-import xarray
+from dataclasses import dataclass, field
 
 import numpy as np
 from phasorpy.phasor import phasor_from_signal
 if TYPE_CHECKING:
+	import xarray
 	import napari
 
 from qtpy.QtCore import Qt, Signal
@@ -39,18 +39,32 @@ from .plot import PhasorPlotWidget
 @dataclass
 class Dataset:
 	path: str|Path
-	name:str
+	name: str
 	channel: int
-	signal: xarray.DataArray # phasorpy signal
-	mean: Optional[np.ndarray] = None # Average signal
-	real: Optional[np.ndarray] = None # Real phasor coords
-	imag: Optional[np.ndarray] = None # Imaginary phasor coords
-	g: Optional[np.ndarray] = None # Processed real coords, exactly as in graph
-	s: Optional[np.ndarray] = None # Processed real coords, exactly as in graph
+	signal: "xarray.DataArray"
+	mean: np.ndarray = field(init=False) # Mean signal
+	real_raw: np.ndarray = field(init=False) # Raw real phasor
+	imag_raw: np.ndarray = field(init=False) # Raw imaginary phasor
+	real_calibrated: np.ndarray = field(init=False) # Calibrated real phasor
+	imag_calibrated: np.ndarray = field(init=False) # Calibrated imaginary phasor
+	g: np.ndarray = field(init=False) # Processed real coords, exactly as in graph
+	s: np.ndarray = field(init=False) # Processed imaginary coords, exactly as in graph
 
-	def reset_gs(self) -> None:
-		self.g = self.real.copy()
-		self.s = self.imag.copy()
+	def compute_phasor(self) -> None:
+		"""
+		Compute mean, real and imag, then sync all downstream attributes.
+		"""
+		self.mean, self.real_raw, self.imag_raw = phasor_from_signal(self.signal, axis='H')
+		self.calibrate_phasor()
+
+	def calibrate_phasor(self, calibration:Calibration=None) -> None:
+		if calibration:
+			self.real_calibrated, self.imag_calibrated = calibration.compute_calibrated_phasor(self.real_raw, self.imag_raw)
+		else:
+			self.real_calibrated = self.real_raw
+			self.imag_calibrated = self.imag_raw
+		self.g = self.real_calibrated
+		self.s = self.imag_calibrated
 
 class DatasetRow(QWidget):
 	show_clicked = Signal()
@@ -69,7 +83,8 @@ class DatasetRow(QWidget):
 		self._list: QListWidget|None = None
 		self._item: QListWidgetItem|None = None
 
-		self.compute_phasor()
+		# Initialize phasor
+		self.dataset.compute_phasor()
 		self._build()
 		self._add_image()
 
@@ -114,21 +129,11 @@ class DatasetRow(QWidget):
 		self._list = listw
 		self._item = item
 
-	def compute_phasor(self) -> None:
-		"""
-		Compute the uncalibrated phasor.
-		"""
-		self.dataset.mean, self.dataset.real, self.dataset.imag = phasor_from_signal(self.dataset.signal, axis='H')
-		self.dataset.reset_gs()
-
 	def calibrate_phasor(self, calibration:Calibration) -> None:
 		"""
 		Calibrate the phasor coordinate of dataset against the provided calibration.
 		"""
-		# TODO: Fix the bg where phasor can be calibrated multipe times.
-		# To do this, we probably need to store three instance of data:
-		# raw real, imag; calibrated real, imag; filtered g, s
-		self.dataset.real, self.dataset.imag = calibration.compute_calibrated_phasor(self.dataset.real, self.dataset.imag)
+		self.dataset.calibrate_phasor(calibration)
 
 	## ------ Internal ------ ##
 	def _add_image(self) -> None:
@@ -148,11 +153,9 @@ class DatasetRow(QWidget):
 		r = self._list.row(self._item) # Get the row index
 		self._list.takeItem(r) # Remove from list
 		self.deleteLater() # Delete the widget; let gc handle the list item
-		# TODO: Remove the associated layers
+		# TODO: Remove the associated layers?
 
 	def _on_show(self) -> None:
-		# TODO: Figure out what the show button should do now that 
-		# we have a separate button for visualization.
 		if self.btn_show.isChecked():
 			# Show
 			self._add_image()
