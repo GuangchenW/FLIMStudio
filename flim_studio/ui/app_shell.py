@@ -39,7 +39,6 @@ class PhasorAnalysis(QWidget):
 		#self._test()
 
 	def _build(self) -> None:
-		theme = getattr(self.viewer, "theme", "dark")
 		layout = QVBoxLayout(self)
 
 		cal_widget = CalibrationWidget(self)
@@ -47,7 +46,3 @@ class PhasorAnalysis(QWidget):
 		layout.addWidget(cal_widget)
 		layout.addWidget(sample_manager_widget)
 
-
-	def _test(self) -> None:
-		points = [[1,1], [-1,1], [1,-1], [-1,-1]]
-		self.viewer.add_points(points)
