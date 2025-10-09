@@ -27,7 +27,8 @@ class PhasorAnalysis(QWidget):
 		super().__init__()
 		self.viewer = viewer
 		self.setWindowTitle("Phasor Analysis")
-		LayerManager(self.viewer) # Initialize layer manager singleton
+		# IMPORTANT: Initialize layer manager singleton
+		LayerManager(self.viewer)
 		self.defaults = Defaults()
 		self._signal = None
 		self._phasor = None
@@ -42,9 +43,7 @@ class PhasorAnalysis(QWidget):
 		layout = QVBoxLayout(self)
 
 		cal_widget = CalibrationWidget(self)
-		sample_manager_widget = SampleManagerWidget(self.viewer, cal_widget.get_calibration(), self)
-		# HACK: I don't like it is doing this here. Maybe move the entire cal widget reference into sample manager
-		cal_widget.calibrationChanged.connect(sample_manager_widget._mark_all_stale)
+		sample_manager_widget = SampleManagerWidget(self.viewer, cal_widget, self)
 		layout.addWidget(cal_widget)
 		layout.addWidget(sample_manager_widget)
 

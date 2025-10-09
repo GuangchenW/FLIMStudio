@@ -222,7 +222,7 @@ class RoiManagerWidget(QWidget):
 		item.setSizeHint(roi_row.sizeHint())
 		self.roi_list.addItem(item)
 		self.roi_list.setItemWidget(item, roi_row)
-		# Set the newly created item as current so user can move it right away
+		# Select the newly created item immediately so user can move it right away
 		self.roi_list.setCurrentItem(item)
 		# Reset name lineedit
 		self.le_roi_name.setText("")

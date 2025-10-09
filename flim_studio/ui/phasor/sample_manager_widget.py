@@ -6,9 +6,6 @@ from dataclasses import dataclass, field
 import numpy as np
 from phasorpy.phasor import phasor_from_signal
 from phasorpy.lifetime import phasor_to_apparent_lifetime, phasor_to_normal_lifetime
-if TYPE_CHECKING:
-	import xarray
-	import napari
 
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtGui import QIcon
@@ -37,6 +34,11 @@ from flim_studio.core import (
 )
 from flim_studio.ui.custom import ThemedButton, Indicator
 from .plot import PhasorPlotWidget
+
+if TYPE_CHECKING:
+	import xarray
+	import napari
+	from flim_studio.ui.phasor import CalibrationWidget
 
 @dataclass
 class Dataset:
@@ -204,15 +206,18 @@ class SampleManagerWidget(QWidget):
 	def __init__(
 		self,
 		viewer: "napari.viewer.Viewer",
-		calibration: Calibration,
+		cal_widget: "CalibrationWidget",
 		parent: Optional[QWidget]=None,
 	):
-		# NOTE: The theme is passed around because it is needed for determining 
-		# the icon to use depending on lihgt and dark theme. Maybe it's better 
-		# to pass the viewer around instead, but for now this will do.
+		# NOTE: The viewer is passed around because it is needed for determining 
+		# the icon to use depending on lihgt and dark theme.
 		super().__init__(parent)
 		self.viewer = viewer
-		self.calibration = calibration
+		# HACK: Still not a big fan of how this dependency is set up.
+		# Ideally we don't need to inject this dependcy at all.
+		self.calibration = cal_widget.calibration
+		# Set up connect to update status od datasets
+		cal_widget.calibrationChanged.connect(self._mark_all_stale)
 		self._build()
 
 	## ------ UI ------ ##
