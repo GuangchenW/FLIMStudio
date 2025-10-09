@@ -13,7 +13,7 @@ from qtpy.QtWidgets import (
 	QListWidget,
 	QListWidgetItem
 )
-from flim_studio.ui.custom import RemoveButton, ColorButton
+from flim_studio.ui.custom import ThemedButton, ColorButton
 
 if TYPE_CHECKING:
 	from matplotlib.axes import Axes
@@ -57,8 +57,8 @@ class RoiRowWidget(QWidget):
 	def _build_ui(self, init_radius:float, init_color:str) -> None:
 		root = QHBoxLayout(self)
 
-		self.btn_remove = RemoveButton(viewer=self.viewer)
-		self.btn_remove.setToolTip("Remove ROI")
+		self.btn_remove = ThemedButton(icon="delete", viewer=self.viewer)
+		self.btn_remove.setToolTip("Delete ROI")
 		self.btn_remove.clicked.connect(self._on_removal)
 		root.addWidget(self.btn_remove)
 

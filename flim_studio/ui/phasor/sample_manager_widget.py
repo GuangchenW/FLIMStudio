@@ -35,7 +35,7 @@ from flim_studio.core import (
 	LayerType,
 	LayerManager,
 )
-from flim_studio.ui.custom import RemoveButton, Indicator
+from flim_studio.ui.custom import ThemedButton, Indicator
 from .plot import PhasorPlotWidget
 
 @dataclass
@@ -118,10 +118,11 @@ class DatasetRow(QWidget):
 	def _build(self) -> None:
 		layout = QHBoxLayout(self)
 		self.label = QLabel(self.name)
-		self.btn_delete = RemoveButton(viewer=self.viewer)
+		self.btn_delete = ThemedButton(icon="delete", viewer=self.viewer)
 		self.btn_delete.setToolTip("Remove dataset")
 		self.btn_delete.clicked.connect(self._on_removal)
-		self.btn_show = self._make_show_button(self.viewer)
+		self.btn_show = ThemedButton(icon="visibility", viewer=self.viewer)
+		self.btn_show.setToolTip("Show estimated lifetime")
 		self.btn_show.clicked.connect(self._on_show)
 		# Dropbox for selecting the lifetime to visualize
 		self.lifetime_combo_box = QComboBox()
@@ -143,22 +144,6 @@ class DatasetRow(QWidget):
 		layout.addWidget(self.lifetime_combo_box, 0)
 		layout.addWidget(self.btn_show, 0)
 		layout.addWidget(self.indicator, 0)
-
-	def _make_show_button(self, viewer) -> QPushButton:
-		btn = QPushButton()
-
-		def apply_icons(*_):
-			theme = getattr(viewer, "theme", "dark")
-			icon = QIcon()
-			# Enabled icon
-			icon.addFile(f"theme_{theme}:/new_image.svg", mode=QIcon.Normal, state=QIcon.Off)
-			btn.setIcon(icon)
-
-		apply_icons() # Initialize the icons
-		btn.setToolTip("Show estimated lifetime")
-		# Keep in sync with theme
-		viewer.events.theme.connect(apply_icons)
-		return btn
 
 	## ------ Public API ------ ##
 	def bind(self, listw:QListWidget, item:QListWidgetItem) -> None:
