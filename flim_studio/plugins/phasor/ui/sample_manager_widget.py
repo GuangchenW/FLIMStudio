@@ -26,9 +26,9 @@ from qtpy.QtWidgets import (
 	QStyle
 )
 
-from flim_studio.common.core import LayerType, LayerManager
-from flim_studio.common.io import load_signal
-from flim_studio.common.ui import ThemedButton, Indicator
+from flim_studio.core.napari import LayerManager
+from flim_studio.core.io import load_signal
+from flim_studio.core.widgets import ThemedButton, Indicator
 from .plot import PhasorPlotWidget
 
 if TYPE_CHECKING:

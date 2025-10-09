@@ -16,7 +16,7 @@ import numpy as np
 from napari import Viewer
 
 from flim_studio.config.defaults import Defaults
-from flim_studio.common.core import LayerManager
+from flim_studio.core.napari import LayerManager
 
 # HACK: Gotta clean up imports at some point
 from .phasor.ui.calibration_widget import CalibrationWidget
