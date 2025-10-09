@@ -3,13 +3,11 @@ from typing import Optional, Literal, TYPE_CHECKING
 from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QWidget, QVBoxLayout
 
+import numpy as np
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
 
 from phasorpy.plot import PhasorPlot
-from phasorpy.phasor import phasor_filter_median
-
-from ..core.processing import photon_range_mask
 
 if TYPE_CHECKING:
 	from .sample_manager import Dataset
@@ -109,18 +107,16 @@ class PhasorGraphWidget(QWidget):
 		"""
 		# HACK: Somewhat hacky, prob better to move this into the Dataset class
 		# Median filter
-		m = dataset.mean; g = dataset.real_calibrated; s = dataset.imag_calibrated
-		if median_filter_repetition > 0:
-			m,g,s = phasor_filter_median(m, g, s, repeat=median_filter_repetition, size=median_filter_size)
-		# Photon sum filter
-		labels = photon_range_mask(dataset.signal.sum(dim='H'), min_photon_count, max_photon_count)
-		mask = (labels == 1)
-		# Set filtered pixels to 0, this is to maintain shape 
-		g[~mask] = 0; s[~mask] = 0
-		dataset.g = g; dataset.s = s
+		dataset.reset_gs()
+		dataset.apply_median_filter(median_filter_size, median_filter_repetition)
+		dataset.apply_photon_threshold(min_photon_count, max_photon_count)
 		dataset.compute_lifetime_estimates()
 		# Slice only meaningful values for efficient plotting
-		g = g[mask]; s = s[mask]
+		# HACK: A little hacky, probably should let Dataset do this
+		g = dataset.g; s = dataset.s
+		g = g[~np.isnan(g)]
+		s = s[~np.isnan(s)]
+		print(g.shape, s.shape)
 		match mode:
 			case "scatter":
 				self._pp.plot(g, s, fmt='.')
