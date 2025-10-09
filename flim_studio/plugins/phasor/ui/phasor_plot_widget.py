@@ -10,10 +10,10 @@ from qtpy.QtWidgets import (
 from matplotlib.colors import to_rgb
 
 from flim_studio.core.napari import LayerManager
-from flim_studio.plugins.phasor.core import labels_from_roi
-from .graph import PhasorGraphWidget
-from .control_panel import PhasorControlPanel
-from .roi_manager import RoiManagerWidget
+from ..core import labels_from_roi
+from .phasor_plot_graph import PhasorGraphWidget
+from .phasor_plot_control import PhasorControlPanel
+from .phasor_plot_roi import RoiManagerWidget
 
 if TYPE_CHECKING:
 	import napari

@@ -29,7 +29,7 @@ from qtpy.QtWidgets import (
 from flim_studio.core.napari import LayerManager
 from flim_studio.core.io import load_signal
 from flim_studio.core.widgets import ThemedButton, Indicator
-from .plot import PhasorPlotWidget
+from .phasor_plot_widget import PhasorPlotWidget
 
 if TYPE_CHECKING:
 	import xarray
@@ -331,6 +331,7 @@ class SampleManagerWidget(QWidget):
 		phasor_plot_dock.setAllowedAreas(Qt.NoDockWidgetArea)
 
 	def _mark_all_stale(self) -> None:
+		# DANGER: manually changing phi_0 and m_0 does not trigger this
 		for i in range(self.dataset_list.count()):
 			item = self.dataset_list.item(i)
 			row = self.dataset_list.itemWidget(item)

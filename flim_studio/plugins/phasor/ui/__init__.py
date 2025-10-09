@@ -1,1 +1,3 @@
 from .calibration_widget import CalibrationWidget
+from .sample_manager_widget import SampleManagerWidget
+from .phasor_plot_widget import PhasorPlotWidget
