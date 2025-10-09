@@ -17,7 +17,7 @@ from .phasor_plot_roi import RoiManagerWidget
 
 if TYPE_CHECKING:
 	import napari
-	from .sample_manager_widget import Dataset
+	from flim_studio.core.models import Dataset
 
 class PhasorPlotWidget(QWidget):
 	"""
