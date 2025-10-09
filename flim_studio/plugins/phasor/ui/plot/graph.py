@@ -8,7 +8,7 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolb
 
 from phasorpy.plot import PhasorPlot
 from phasorpy.phasor import phasor_filter_median
-from flim_studio.core.processing import photon_range_mask
+from flim_studio.plugins.phasor.core.processing import photon_range_mask
 
 if TYPE_CHECKING:
 	from ..sample_manager import Dataset

@@ -16,11 +16,11 @@ import numpy as np
 from napari import Viewer
 
 from flim_studio.config.defaults import Defaults
-from flim_studio.core import LayerManager
+from flim_studio.common.core import LayerManager
 
 # HACK: Gotta clean up imports at some point
-from .phasor.calibration_widget import CalibrationWidget
-from .phasor.sample_manager_widget import SampleManagerWidget
+from .phasor.ui.calibration_widget import CalibrationWidget
+from .phasor.ui.sample_manager_widget import SampleManagerWidget
 
 class PhasorAnalysis(QWidget):
 	def __init__(self, viewer:Viewer) -> None:

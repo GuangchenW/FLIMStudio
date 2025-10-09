@@ -15,8 +15,9 @@ from qtpy.QtWidgets import (
 	QStyle
 )
 
-from flim_studio.core.calibration import Calibration
-from flim_studio.ui.custom import AutoDoubleSpinBox
+from flim_studio.common.ui import AutoDoubleSpinBox
+from ..core import Calibration
+
 
 class CalibrationWidget(QWidget):
 	"""

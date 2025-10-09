@@ -9,7 +9,8 @@ from qtpy.QtWidgets import (
 )
 from matplotlib.colors import to_rgb
 
-from flim_studio.core import LayerManager, labels_from_roi
+from flim_studio.common.core import LayerManager
+from flim_studio.plugins.phasor.core import labels_from_roi
 from .graph import PhasorGraphWidget
 from .control_panel import PhasorControlPanel
 from .roi_manager import RoiManagerWidget
@@ -82,6 +83,7 @@ class PhasorPlotWidget(QWidget):
 		if len(datasets) <= 0: return # Should not happen but safeguard
 
 		self.phasor_graph_widget.clear_plot()
+		# TODO: might want to give each dataset its own color/colormap
 		for ds in datasets:
 			self.phasor_graph_widget.draw_dataset(ds, **params)
 		self.phasor_graph_widget.draw_idle()

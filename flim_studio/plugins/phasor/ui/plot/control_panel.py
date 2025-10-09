@@ -17,7 +17,7 @@ from qtpy.QtWidgets import (
 import matplotlib.pyplot as plt
 
 if TYPE_CHECKING:
-	from .sample_manager_widget import Dataset
+	from ..sample_manager_widget import Dataset
 
 class PhasorControlPanel(QGroupBox):
 	"""

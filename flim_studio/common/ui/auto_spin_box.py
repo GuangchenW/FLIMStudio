@@ -11,7 +11,10 @@ from qtpy.QtWidgets import (
 	QStyle
 )
 
-from flim_studio.ui.utils import COLOR_SUCCESS, COLOR_FAILURE, COLOR_OVERRIDDEN
+# HACK: Standarize and collect at same place
+COLOR_SUCCESS = "#004411"
+COLOR_FAILURE = "#440000"
+COLOR_OVERRIDDEN = "#110044"
 
 class AutoDoubleSpinBox(QWidget):
 	"""

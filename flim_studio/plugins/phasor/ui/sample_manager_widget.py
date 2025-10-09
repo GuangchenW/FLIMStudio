@@ -26,19 +26,17 @@ from qtpy.QtWidgets import (
 	QStyle
 )
 
-from flim_studio.core import (
-	load_signal,
-	Calibration,
-	LayerType,
-	LayerManager,
-)
-from flim_studio.ui.custom import ThemedButton, Indicator
+from flim_studio.common.core import LayerType, LayerManager
+from flim_studio.common.io import load_signal
+from flim_studio.common.ui import ThemedButton, Indicator
 from .plot import PhasorPlotWidget
 
 if TYPE_CHECKING:
 	import xarray
 	import napari
-	from flim_studio.ui.phasor import CalibrationWidget
+	# HACK: still feels a bit hacky
+	from .calibration_widget import CalibrationWidget
+	from ..core import Calibration
 
 @dataclass
 class Dataset:
@@ -67,7 +65,7 @@ class Dataset:
 		# Calibrate without calibration to init other properties
 		self.calibrate_phasor()
 
-	def calibrate_phasor(self, calibration:Calibration=None) -> None:
+	def calibrate_phasor(self, calibration:"Calibration"=None) -> None:
 		if calibration:
 			self.real_calibrated, self.imag_calibrated = calibration.compute_calibrated_phasor(self.real_raw, self.imag_raw)
 		else:
@@ -155,7 +153,7 @@ class DatasetRow(QWidget):
 		self._list = listw
 		self._item = item
 
-	def calibrate_phasor(self, calibration:Calibration) -> None:
+	def calibrate_phasor(self, calibration:"Calibration") -> None:
 		"""
 		Calibrate the phasor coordinate of dataset against the provided calibration.
 		"""
