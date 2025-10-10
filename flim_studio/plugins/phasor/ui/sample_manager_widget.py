@@ -24,10 +24,10 @@ from qtpy.QtWidgets import (
 )
 
 from flim_studio.core.napari import LayerManager
-from flim_studio.core.models import Dataset
 from flim_studio.core.io import load_signal
 from flim_studio.core.widgets import ThemedButton, Indicator
 from .phasor_plot_widget import PhasorPlotWidget
+from ..core import Dataset
 
 if TYPE_CHECKING:
 	import xarray

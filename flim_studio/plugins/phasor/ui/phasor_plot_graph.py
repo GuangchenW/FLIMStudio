@@ -10,7 +10,7 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolb
 from phasorpy.plot import PhasorPlot
 
 if TYPE_CHECKING:
-	from .sample_manager import Dataset
+	from ..core import Dataset
 	from matplotlib.axes import Axes
 
 class PhasorGraphWidget(QWidget):
@@ -105,8 +105,6 @@ class PhasorGraphWidget(QWidget):
 		:param mode: Plotting mode. Accepts plot, hist2d, contour. Default contour.
 		:param color: Plot color. 
 		"""
-		# HACK: Somewhat hacky, prob better to move this into the Dataset class
-		# Median filter
 		dataset.reset_gs()
 		dataset.apply_median_filter(median_filter_size, median_filter_repetition)
 		dataset.apply_photon_threshold(min_photon_count, max_photon_count)
@@ -116,7 +114,6 @@ class PhasorGraphWidget(QWidget):
 		g = dataset.g; s = dataset.s
 		g = g[~np.isnan(g)]
 		s = s[~np.isnan(s)]
-		print(g.shape, s.shape)
 		match mode:
 			case "scatter":
 				self._pp.plot(g, s, fmt='.')
