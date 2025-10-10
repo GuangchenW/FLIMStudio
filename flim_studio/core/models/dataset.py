@@ -68,12 +68,19 @@ class Dataset:
 		self.s = self.imag_calibrated.copy()
 
 	def apply_median_filter(self, kernel_size:int=3, repetition:int=0) -> None:
+		"""
+		Apply median filter to g and s.
+		"""
 		if repetition < 1: return
 		if kernel_size < 3: return
 		# Mean is unchanged per documentation
 		_, self.g, self.s = phasor_filter_median(self.mean, self.g, self.s, repeat=repetition, size=kernel_size)
 
 	def apply_photon_threshold(self, min_thresh:int=0, max_thresh:int|None=None) -> None:
+		"""
+		Filter g and s based on total photon count of raw signal.
+		Note that this turns the pixels outside the thresholds to nan.
+		"""
 		labels = self._photon_range_mask(self.photon_sum(), min_thresh, max_thresh)
 		mask = (labels == 1)
 		# Set filtered pixels to 0, this is to maintain shape 
