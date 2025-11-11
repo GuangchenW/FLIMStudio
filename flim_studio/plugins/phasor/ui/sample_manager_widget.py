@@ -63,9 +63,10 @@ class DatasetRow(QWidget):
 		self.btn_delete = ThemedButton(icon="delete", viewer=self.viewer)
 		self.btn_delete.setToolTip("Remove dataset")
 		self.btn_delete.clicked.connect(self._on_removal)
-		self.btn_show = ThemedButton(icon="visibility", viewer=self.viewer)
-		self.btn_show.setToolTip("Show estimated lifetime")
-		self.btn_show.clicked.connect(self._on_show)
+		# TODO: Change behavior of eye button
+		#self.btn_show = ThemedButton(icon="visibility", viewer=self.viewer)
+		#self.btn_show.setToolTip("Focus in layer viewer")
+		#self.btn_show.clicked.connect(self._on_show)
 		# Dropbox for selecting the lifetime to visualize
 		self.lifetime_combo_box = QComboBox()
 		self.lifetime_combo_box.setToolTip((
@@ -76,6 +77,7 @@ class DatasetRow(QWidget):
 		self.lifetime_combo_box.addItem("phi")
 		self.lifetime_combo_box.addItem("M")
 		self.lifetime_combo_box.addItem("proj")
+		self.lifetime_combo_box.currentIndexChanged.connect(lambda i : self._on_show())
 		# Indicator for calibration status
 		self.indicator = Indicator()
 		self.indicator.set_state("bad")
@@ -84,7 +86,7 @@ class DatasetRow(QWidget):
 		layout.addWidget(self.btn_delete, 0)
 		layout.addWidget(self.label, 1)
 		layout.addWidget(self.lifetime_combo_box, 0)
-		layout.addWidget(self.btn_show, 0)
+		#layout.addWidget(self.btn_show, 0)
 		layout.addWidget(self.indicator, 0)
 
 	## ------ Public API ------ ##
