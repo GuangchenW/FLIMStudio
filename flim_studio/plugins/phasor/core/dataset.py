@@ -19,6 +19,7 @@ class Dataset:
 	channel: int
 	signal: "xarray.DataArray"
 	frequency: float = field(init=False) # Last used frequency
+	total: np.ndarray = field(init=False) # Sum of photons over H axis
 	mean: np.ndarray = field(init=False) # Mean signal
 	real_raw: np.ndarray = field(init=False) # Raw real phasor
 	imag_raw: np.ndarray = field(init=False) # Raw imaginary phasor
@@ -30,14 +31,18 @@ class Dataset:
 	modulation_lifetime: np.ndarray = field(init=False) # Apparent modulation lifetime
 	normal_lifetime: np.ndarray = field(init=False) # Projected lifetime
 
+	def __post_init__(self) -> None:
+		self.total = self.photon_sum()
+		self.compute_phasor()
+		# Calibrate without calibration to init other properties
+		self.calibrate_phasor()
+
 	def compute_phasor(self) -> None:
 		"""
 		Compute mean, real and imag, then sync all downstream properties.
 		"""
 		self.mean, self.real_raw, self.imag_raw = phasor_from_signal(self.signal, axis='H')
 		self.frequency = self.signal.attrs.get("frequency", 0)
-		# Calibrate without calibration to init other properties
-		self.calibrate_phasor()
 
 	def calibrate_phasor(self, calibration:"Calibration"=None) -> None:
 		if calibration:

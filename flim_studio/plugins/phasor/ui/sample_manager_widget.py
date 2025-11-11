@@ -53,8 +53,6 @@ class DatasetRow(QWidget):
 		self._list: QListWidget|None = None
 		self._item: QListWidgetItem|None = None
 
-		# Initialize phasor
-		self.dataset.compute_phasor()
 		self._build()
 		self._on_show()
 
@@ -127,7 +125,7 @@ class DatasetRow(QWidget):
 		# Show lifetime map
 		match self.lifetime_combo_box.currentText():
 			case "none":
-				LayerManager().add_image(self.dataset.photon_sum(), name=self.dataset.name, overwrite=True)
+				LayerManager().add_image(self.dataset.total, name=self.dataset.name, overwrite=True)
 			case "phi":
 				LayerManager().add_image(self.dataset.phase_lifetime, name=self.dataset.name, overwrite=True)
 			case "M":
