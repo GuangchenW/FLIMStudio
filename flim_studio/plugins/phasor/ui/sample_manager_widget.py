@@ -56,7 +56,7 @@ class DatasetRow(QWidget):
 		# Initialize phasor
 		self.dataset.compute_phasor()
 		self._build()
-		self._add_image()
+		self._on_show()
 
 	## ------ UI ------ ##
 	def _build(self) -> None:
@@ -122,27 +122,18 @@ class DatasetRow(QWidget):
 		# TODO: Remove the associated layers?
 
 	def _on_show(self) -> None:
+		if self.dataset is None:
+			raise RuntimeError(f"Sample {name} does not have a dataset")
 		# Show lifetime map
 		match self.lifetime_combo_box.currentText():
 			case "none":
-				LayerManager().add_image(self.dataset.mean, name=self.dataset.name, overwrite=True)
+				LayerManager().add_image(self.dataset.photon_sum(), name=self.dataset.name, overwrite=True)
 			case "phi":
 				LayerManager().add_image(self.dataset.phase_lifetime, name=self.dataset.name, overwrite=True)
 			case "M":
 				LayerManager().add_image(self.dataset.modulation_lifetime, name=self.dataset.name, overwrite=True)
 			case "proj":
 				LayerManager().add_image(self.dataset.normal_lifetime, name=self.dataset.name, overwrite=True)
-
-	# Obsolete
-	def _add_image(self) -> None:
-		if self.dataset is None or self.dataset.mean is None:
-			return
-		# Add raw signal, i.e. HYX 3D signal
-		# NOTE: axis_label is not shown in napari UI, it is internal only
-		# WARNING: adding the 3D raw data causes axis order conflicts between data formats,
-		# also the H dimension has weird behavior when there are multiple datsets with varying
-		# H length. So it is best to just use averaged signal for now.
-		LayerManager().add_image(self.dataset.mean, name=self.dataset.name)
 
 class SampleManagerWidget(QWidget):
 	def __init__(
