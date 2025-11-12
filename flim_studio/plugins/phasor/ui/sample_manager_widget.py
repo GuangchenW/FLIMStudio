@@ -64,9 +64,9 @@ class DatasetRow(QWidget):
 		self.btn_delete.setToolTip("Remove dataset")
 		self.btn_delete.clicked.connect(self._on_removal)
 		# TODO: Change behavior of eye button
-		#self.btn_show = ThemedButton(icon="visibility", viewer=self.viewer)
-		#self.btn_show.setToolTip("Focus in layer viewer")
-		#self.btn_show.clicked.connect(self._on_show)
+		self.btn_show = ThemedButton(icon="visibility", viewer=self.viewer)
+		self.btn_show.setToolTip("Focus in layer viewer")
+		self.btn_show.clicked.connect(lambda : LayerManager().focus_on_layers(self.dataset.name))
 		# Dropbox for selecting the lifetime to visualize
 		self.lifetime_combo_box = QComboBox()
 		self.lifetime_combo_box.setToolTip((
@@ -86,7 +86,7 @@ class DatasetRow(QWidget):
 		layout.addWidget(self.btn_delete, 0)
 		layout.addWidget(self.label, 1)
 		layout.addWidget(self.lifetime_combo_box, 0)
-		#layout.addWidget(self.btn_show, 0)
+		layout.addWidget(self.btn_show, 0)
 		layout.addWidget(self.indicator, 0)
 
 	## ------ Public API ------ ##

@@ -34,7 +34,14 @@ class LayerManager:
 		self.layer_data = {}
 
 	## ------ Public API ------ ##
-	def add_layer(self, data:np.ndarray, *, name:str, kind:LayerType, overwrite:bool=False, **kwargs) -> None:
+	def add_layer(
+		self, 
+		data:np.ndarray, *, 
+		name:str,
+		kind:LayerType,
+		display_name:str = "",
+		overwrite:bool = False,
+		**kwargs) -> None:
 		"""
 		Add a new napari layer or overwrite an existing one. 
 		"""
@@ -42,14 +49,13 @@ class LayerManager:
 		# Or, if data registered and overwrite, replace data.
 		if self.get_layer_data(name, kind) is None or overwrite:
 			self.layer_data.setdefault(name, {})[kind] = data
-		# Check if layer already exists
+		# Get the target layer
 		layer = self._find_layer(name, kind)
 		if layer is None:
-			# If no layer exists, add layer anyway
-			self._add_layer(data, name, kind, **kwargs)
+			# If no layer exists, add as new layer
+			self._add_layer(data, name=name, kind=kind, display_name=display_name, **kwargs)
 		elif overwrite:
-			# if layer exists, update only if overwrite
-			layer.data = self.get_layer_data(name, kind)
+			layer.data = data
 			# If it is label layer, we need to update colormap as well
 			if kind == LayerType.LABEL:
 				cmap = kwargs.pop("colormap", None)
@@ -67,8 +73,18 @@ class LayerManager:
 		Return the ndarray layer data stored at <name,kind>.
 		If none stored, return None.
 		"""
+		# TODO: We don't need this I think, just use napari api to find layer then get data
 		l1 = self.layer_data.get(name)
 		return None if l1 is None else l1.get(kind)
+
+	def focus_on_layers(self, name:str) -> None:
+		"""
+		Make only layers with metadata containing the given name visible.
+		"""
+		for lyr in self.viewer.layers:
+			meta = getattr(lyr, "metadata", {})
+			fs = meta.get("flimstudio")
+			lyr.visible = (fs is not None and fs.get("name") == name)
 
 	def remove_layer(self, name:str, kind:LayerType) -> None:
 		"""
@@ -101,15 +117,17 @@ class LayerManager:
 				return lyr
 		return None
 
-	def _add_layer(self, data:np.ndarray, name:str, kind:LayerType, **kwargs) -> None:
+	def _add_layer(self, data:np.ndarray, *, name:str, kind:LayerType, display_name:str, **kwargs) -> None:
 		"""
 		Helper function for add_layer. Performs the actual layer adding.
 		"""
 		# Make metadata
 		tag = self._make_tag(name, kind)
+		# If display name is empty, default to name
+		display_name = display_name or name
 		# Add layer
 		match kind:
 			case LayerType.IMAGE:
-				self.viewer.add_image(data, name=name, metadata=tag, **kwargs)
+				self.viewer.add_image(data, name=display_name, metadata=tag, **kwargs)
 			case LayerType.LABEL:
-				self.viewer.add_labels(data, name=name, metadata=tag, **kwargs)
+				self.viewer.add_labels(data, name=display_name, metadata=tag, **kwargs)
