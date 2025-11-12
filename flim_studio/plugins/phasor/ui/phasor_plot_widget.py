@@ -36,6 +36,8 @@ class PhasorPlotWidget(QWidget):
 		self._datasets = datasets
 
 		self._build()
+		# Draw graph with default parameters
+		self._on_plot_phasor()
 
 	## ------ UI ------ ##
 	def _build(self) -> None:
