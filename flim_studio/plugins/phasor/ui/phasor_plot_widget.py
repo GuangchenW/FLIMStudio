@@ -1,4 +1,4 @@
-from typing import Optional, List, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 
 import numpy as np
 
@@ -26,7 +26,7 @@ class PhasorPlotWidget(QWidget):
 	def __init__(
 		self, 
 		viewer: "napari.Viewer",
-		datasets: List["Dataset"],
+		datasets: list["Dataset"],
 		frequency: float|None = None,
 		parent: QWidget|None = None,
 	) -> None:

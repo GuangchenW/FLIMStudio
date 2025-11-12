@@ -186,9 +186,15 @@ class SampleManagerWidget(QWidget):
 		self.dataset_list.setSpacing(0)
 		self.dataset_list.itemSelectionChanged.connect(self._on_selection_changed)
 
+		# Summary statistics access button
+		self.btn_summary = QPushButton("View/Export Summary")
+		self.btn_summary.setToolTip("View/Export summary statistics of selected samples")
+		self.btn_summary.setEnabled(False)
+
 		root.addLayout(load_row)
 		root.addLayout(button_row)
 		root.addWidget(self.dataset_list)
+		root.addWidget(self.btn_summary)
 
 	## ------ Public API ------ ##
 	def get_selected_rows(self) -> List[DatasetRow]:
@@ -239,6 +245,7 @@ class SampleManagerWidget(QWidget):
 		has_selected = len(self.dataset_list.selectedItems())>0
 		self.btn_calibrate.setEnabled(has_selected)
 		self.btn_visualize.setEnabled(has_selected)
+		self.btn_summary.setEnabled(has_selected)
 
 	def _on_calibrate_selected(self) -> None:
 		"""
