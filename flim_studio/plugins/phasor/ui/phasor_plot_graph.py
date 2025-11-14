@@ -9,16 +9,16 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolb
 
 from phasorpy.plot import PhasorPlot
 
+from flim_studio.core.widgets import MPLGraph
+
 if TYPE_CHECKING:
 	from ..core import Dataset
 	from matplotlib.axes import Axes
 
-class PhasorGraphWidget(QWidget):
+class PhasorGraphWidget(MPLGraph):
 	"""
 	QWidget container for matplotlib figure and phasor plot related APIs.
 	"""
-	canvasClicked = Signal(float, float)
-
 	def __init__(
 		self,
 		frequency: float|None = None,
@@ -26,35 +26,12 @@ class PhasorGraphWidget(QWidget):
 		fig_pixels: int = 480,
 		parent: QWidget|None = None
 	) -> None:
-		super().__init__(parent)
-		self.dpi = dpi
-		self.fig_pixels = fig_pixels
+		super().__init__(dpi=dpi, fig_pixels=fig_pixels, parent=parent)
 		self.frequency = frequency
-
-		self._build()
-
-	## ------ UI ------ ##
-	def _build(self) -> None:
-		root = QVBoxLayout(self)
-
-		fsize = self.fig_pixels/self.dpi
-		self._fig = Figure(figsize=(fsize, fsize), dpi=self.dpi)
-		self._canvas = FigureCanvasQTAgg(self._fig)
-		self._toolbar = NavigationToolbar2QT(self._canvas, self)
-		self._ax = self._fig.add_subplot(111)
-		# Connect canavs click event for placing ROIs
-		self._fig.canvas.mpl_connect("button_press_event", self._on_mpl_click)
-		# Make PhasorPlot object and hand it control over the axes
-		self._pp = PhasorPlot(ax=self._ax, frequency=self.frequency)
+		self._pp = PhasorPlot(ax=self.get_ax(), frequency=self.frequency)
 		self.draw_idle()
 
-		root.addWidget(self._toolbar)
-		root.addWidget(self._canvas, stretch=1)
-
 	## ------ Public API ------ ##
-	def get_ax(self) -> "Axes":
-		return self._ax
-
 	def clear_plot(self) -> None:
 		"""
 		Reset the plot.
@@ -122,27 +99,7 @@ class PhasorGraphWidget(QWidget):
 			case "contour":
 				self._pp.contour(g, s, cmap=cmap)
 
-	def draw_idle(self) -> None:
-		"""Schedule canvas changes to be rendered."""
-		self._canvas.draw_idle()
-
 	## ------ Internal ------ ##
-	def _on_mpl_click(self, event) -> None:
-		"""
-		Matplotlib 'button_press_event' handler.
-		Emits (g, s) coordinate when the click occurs inside the axes.
-		"""
-		# Ignore clicks while toolbar is in an active mode (pan/zoom)
-		if getattr(self._toolbar, "mode", ""):
-			return
-		# Ignore if not in our axes (there should only be one but safeguard)
-		if event.inaxes is not self._ax:
-			return
-		if event.xdata is None or event.ydata is None:
-			return
-		g, s = float(event.xdata), float(event.ydata)
-		self.canvasClicked.emit(g, s)
-
 	def _draw_semicircle(self) -> None:
 		# We have to give it frequency here because apparently PhasorPlot does not
 		# keep track of the frequency value given in init.

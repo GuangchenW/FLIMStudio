@@ -31,7 +31,7 @@ class PhasorControlPanel(QGroupBox):
 
 	def __init__(
 		self,
-		datasets: List["Dataset"],
+		datasets: list["Dataset"],
 		parent: QWidget|None = None
 	) -> None:
 		super().__init__("Control", parent)
@@ -110,7 +110,7 @@ class PhasorControlPanel(QGroupBox):
 		ctrl_grid.addWidget(self.dataset_list, 1, 5, 4, 1)
 
 	## ------ Public API ------ ##
-	def get_selected_datasets(self) -> List["Dataset"]:
+	def get_selected_datasets(self) -> list["Dataset"]:
 		return [
 			self._datasets[self.dataset_list.row(item)]
 			for item in self.dataset_list.selectedItems()

@@ -140,14 +140,14 @@ class SampleManagerWidget(QWidget):
 		self,
 		viewer: "napari.viewer.Viewer",
 		cal_widget: "CalibrationWidget",
-		parent: Optional[QWidget]=None,
+		parent: QWidget|None = None,
 	):
 		# NOTE: The viewer is passed around because it is needed for determining 
 		# the icon to use depending on lihgt and dark theme.
 		super().__init__(parent)
 		self.viewer = viewer
 		# HACK: Still not a big fan of how this dependency is set up.
-		# Ideally we don't need to inject this dependcy at all.
+		# Ideally we don't need to inject this dependency at all.
 		self.calibration = cal_widget.calibration
 		# Set up connect to update status od datasets
 		cal_widget.calibrationChanged.connect(self._mark_all_stale)
