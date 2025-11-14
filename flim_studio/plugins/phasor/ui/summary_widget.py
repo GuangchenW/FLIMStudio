@@ -30,6 +30,12 @@ class SummaryWidget(QWidget):
 	):
 		super().__init__(parent)
 		self._datasets = datasets
+		self.stats_items = [
+			"photon_count",
+			"phi_lifetime",
+			"m_lifetime",
+			"proj_lifetime",
+		]
 		self._build()
 
 	def _build(self) -> None:
@@ -42,8 +48,8 @@ class SummaryWidget(QWidget):
 
 		# Left: plot choices and button
 		self.stats_combobox = QComboBox()
-		# TODO: Add all stats options here
-		self.stats_combobox.addItem("Placeholder")
+		for item in self.stats_items:
+			self.stats_combobox.addItem(item)
 		self.btn_plot = QPushButton("Plot selected")
 		ctrl_grid.addWidget(self.stats_combobox, 1, 1)
 		ctrl_grid.addWidget(self.btn_plot, 2, 1)
@@ -63,7 +69,7 @@ class SummaryWidget(QWidget):
 		self.group_combobox = QComboBox()
 		self.group_combobox.setEditable(True)
 		self.group_combobox.setInsertPolicy(QComboBox.InsertAtTop)
-		self.group_combobox.addItem("default")
+		self.group_combobox.addItem("none")
 		self.btn_assign_group = QPushButton("Group selected")
 		self.btn_assign_group.setToolTip("Assign selected datasets to the group selected above")
 		self.btn_assign_group.clicked.connect(self._on_btn_assign_group_clicked)
