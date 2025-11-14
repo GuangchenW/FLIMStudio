@@ -41,6 +41,9 @@ class MPLGraph(QWidget):
 		"""Schedule canvas changes to be rendered."""
 		self._canvas.draw_idle()
 
+	def clear(self) -> None:
+		self._ax.cla()
+
 	## ------ Internal ------ ##
 	def _on_mpl_click(self, event) -> None:
 		"""

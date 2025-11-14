@@ -32,7 +32,7 @@ class PhasorGraphWidget(MPLGraph):
 		self.draw_idle()
 
 	## ------ Public API ------ ##
-	def clear_plot(self) -> None:
+	def clear(self) -> None:
 		"""
 		Reset the plot.
 		"""

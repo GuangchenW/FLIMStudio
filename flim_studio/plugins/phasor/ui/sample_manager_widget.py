@@ -27,6 +27,7 @@ from flim_studio.core.napari import LayerManager
 from flim_studio.core.io import load_signal
 from flim_studio.core.widgets import ThemedButton, Indicator
 from .phasor_plot_widget import PhasorPlotWidget
+from .summary_widget import SummaryWidget
 from ..core import Dataset
 
 if TYPE_CHECKING:
@@ -189,6 +190,7 @@ class SampleManagerWidget(QWidget):
 		# Summary statistics access button
 		self.btn_summary = QPushButton("View/Export Summary")
 		self.btn_summary.setToolTip("View/Export summary statistics of selected samples")
+		self.btn_summary.clicked.connect(self._on_btn_summary_clicked)
 		self.btn_summary.setEnabled(False)
 
 		root.addLayout(load_row)
@@ -262,8 +264,6 @@ class SampleManagerWidget(QWidget):
 		If no selected datasets have phasor, simply return.
 		"""
 		datasets = self.get_selected_datasets()
-		# Filter for datasets that has phasor computed
-		datasets = [ds for ds in datasets if ds.mean is not None]
 		if len(datasets) <= 0: return
 		# Make plot widget
 		phasor_plot_widget = PhasorPlotWidget(self.viewer, datasets, frequency=self.calibration.frequency)
@@ -271,6 +271,15 @@ class SampleManagerWidget(QWidget):
 		phasor_plot_dock = self.viewer.window.add_dock_widget(phasor_plot_widget, name="Phasor Plot", area="bottom")
 		phasor_plot_dock.setFloating(True)
 		phasor_plot_dock.setAllowedAreas(Qt.NoDockWidgetArea)
+
+	def _on_btn_summary_clicked(self) -> None:
+		datasets = self.get_selected_datasets()
+		if len(datasets) <= 0: return
+		# Make summary widget
+		summary_widget = SummaryWidget(datasets)
+		dock = self.viewer.window.add_dock_widget(summary_widget, name="Phasor Summary", area="bottom")
+		dock.setFloating(True)
+		# TODO: Perhaps we want to set this as undockable as well?
 
 	def _mark_all_stale(self) -> None:
 		# DANGER: manually changing phi_0 and m_0 does not trigger this
