@@ -12,8 +12,6 @@ if TYPE_CHECKING:
 
 @dataclass
 class Dataset:
-	# TODO: We really need to think hard about this data model.
-	# I think it's going to be too bloated.
 	path: str|Path
 	name: str
 	channel: int
@@ -30,12 +28,15 @@ class Dataset:
 	phase_lifetime: np.ndarray = field(init=False) # Apparent phase lifetime
 	modulation_lifetime: np.ndarray = field(init=False) # Apparent modulation lifetime
 	normal_lifetime: np.ndarray = field(init=False) # Projected lifetime
+	group: str = field(init=False) # Assigned group
 
 	def __post_init__(self) -> None:
 		self.total = self.photon_sum()
 		self.compute_phasor()
 		# Calibrate without calibration to init other properties
 		self.calibrate_phasor()
+		# Set to default group
+		self.group = "default"
 
 	def compute_phasor(self) -> None:
 		"""
@@ -96,7 +97,19 @@ class Dataset:
 		Sum raw signal over time-axis => photon counts per pixel.
 		Returns (Y,X) uint32 np.ndarray.
 		"""
-		return self.signal.sum(dim='H')
+		return self.signal.sum(dim='H').to_numpy()
+
+	def summarize(self) -> dict:
+		# TODO: Maybe find a way to standarize the property names
+		out = {}
+		out["name"] = self.name
+		out["channel"] = self.channel
+		out["group"] = self.group
+		out["photon_count"] = self.total.flatten()
+		out["phi_lifetime"] = self.phase_lifetime.flatten()
+		out["m_lifetime"] = self.modulation_lifetime.flatten()
+		out["proj_lifetime"] = self.normal_lifetime.flatten()
+		return out
 
 	## ------ Internal ------ ##
 	def _photon_range_mask(
