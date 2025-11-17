@@ -47,14 +47,17 @@ class SummaryWidget(QWidget):
 		ctrl_grid.setContentsMargins(5,15,5,5)
 		root.addLayout(ctrl_grid)
 
-		# Left: plot choices and button
+		# Left: plot controls
 		self.stats_combobox = QComboBox()
 		for item in self.stats_items:
 			self.stats_combobox.addItem(item)
 		self.btn_plot = QPushButton("Plot selected")
 		self.btn_plot.clicked.connect(self._on_btn_plot_clicked)
+		self.btn_clear = QPushButton("Clear plot")
+		self.btn_clear.clicked.connect(self._on_btn_clear_clicked)
 		ctrl_grid.addWidget(self.stats_combobox, 1, 1)
 		ctrl_grid.addWidget(self.btn_plot, 2, 1)
+		ctrl_grid.addWidget(self.btn_clear, 3, 1)
 
 		# Middle: dataset list
 		self.dataset_list = QListWidget()
@@ -65,15 +68,17 @@ class SummaryWidget(QWidget):
 			self.dataset_list.addItem(list_item)
 			list_item.setSelected(True)
 		self.dataset_list.itemSelectionChanged.connect(self._on_selection_changed)
-		ctrl_grid.addWidget(self.dataset_list, 1, 2, 2, 1)
+		ctrl_grid.addWidget(self.dataset_list, 1, 2, 3, 1)
 
-		# Right: group assignment
+		# Right: data control
 		self.le_group = QLineEdit()
 		self.le_group.setPlaceholderText("Enter group name")
 		self.btn_assign_group = QPushButton("Group selected")
 		self.btn_assign_group.setToolTip("Assign selected datasets to the group name entered above")
 		self.btn_assign_group.clicked.connect(self._on_btn_assign_group_clicked)
-		# TODO: Connect signal
+		self.btn_export = QPushButton("Export selected")
+		self.btn_export.setToolTip("Export selected datasets. Select all datasets to export all.")
+		self.btn_export.clicked.connect(self._on_btn_export_clicked)
 		ctrl_grid.addWidget(self.le_group, 1, 3)
 		ctrl_grid.addWidget(self.btn_assign_group, 2, 3)
 		# Init states of all buttons
@@ -112,6 +117,9 @@ class SummaryWidget(QWidget):
 			data[group] = np.append(data.get(group, np.array([])), values)
 		return data
 
+	def _on_btn_clear_clicked(self) -> None:
+		self.graph.clear()
+
 	def _on_btn_assign_group_clicked(self) -> None:
 		datasets = self.get_selected_datasets()
 		if len(datasets) == 0: return
@@ -132,6 +140,9 @@ class SummaryWidget(QWidget):
 			ds = self._datasets[self.dataset_list.row(item)]
 			item.setText(self._make_item_name(ds))
 
+	def _on_btn_export_clicked(self) -> None:
+		pass
+		# TODO: Implement data export
 
 	def _on_selection_changed(self) -> None:
 		"""

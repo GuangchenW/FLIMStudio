@@ -43,6 +43,7 @@ class MPLGraph(QWidget):
 
 	def clear(self) -> None:
 		self._ax.cla()
+		self.draw_idle()
 
 	## ------ Internal ------ ##
 	def _on_mpl_click(self, event) -> None:
