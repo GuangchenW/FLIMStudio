@@ -49,7 +49,7 @@ class MPLGraph(QWidget):
 	def _on_mpl_click(self, event) -> None:
 		"""
 		Matplotlib 'button_press_event' handler.
-		Emits (g, s) coordinate when the click occurs inside the axes.
+		Emits (x, y) coordinate when the click occurs inside the axes.
 		"""
 		# Ignore clicks while toolbar is in an active mode (pan/zoom)
 		if getattr(self._toolbar, "mode", ""):
