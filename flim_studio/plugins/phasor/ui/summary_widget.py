@@ -121,6 +121,10 @@ class SummaryWidget(QWidget):
 		self.graph.clear()
 
 	def _on_btn_assign_group_clicked(self) -> None:
+		"""
+		Set the group of selected datasets to the group specified in le_group.
+		Then refresh the names of selected list items.
+		"""
 		group = self.le_group.text()
 		for item in self.dataset_list.selectedItems():
 			dataset = self._datasets[self.dataset_list.row(item)]
