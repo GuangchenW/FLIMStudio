@@ -121,24 +121,14 @@ class SummaryWidget(QWidget):
 		self.graph.clear()
 
 	def _on_btn_assign_group_clicked(self) -> None:
-		datasets = self.get_selected_datasets()
-		if len(datasets) == 0: return
 		group = self.le_group.text()
-		for ds in datasets:
-			ds.group = group
-		self._refresh_item_names()
+		for item in self.dataset_list.selectedItems():
+			dataset = self._datasets[self.dataset_list.row(item)]
+			dataset.group = group
+			item.setText(self._make_item_name(dataset))
 
 	def _make_item_name(self, dataset:"Dataset") -> str:
 		return f"{dataset.name} (channel {dataset.channel}) [{dataset.group}]"
-
-	def _refresh_item_names(self) -> None:
-		"""
-		Refresh the displayed names of the datasets in the list.
-		"""
-		for i in range(self.dataset_list.count()):
-			item = self.dataset_list.item(i)
-			ds = self._datasets[self.dataset_list.row(item)]
-			item.setText(self._make_item_name(ds))
 
 	def _on_btn_export_clicked(self) -> None:
 		pass
