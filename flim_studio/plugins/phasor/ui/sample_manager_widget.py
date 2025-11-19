@@ -227,13 +227,11 @@ class SampleManagerWidget(QWidget):
 		)
 		selected_channel = self.channel_selector.value()
 		for path in paths:
-			name = os.path.basename(path)
-			# TODO: Do we need to handle channel exception here? Or leave it to napari
-			signal = load_signal(path, selected_channel) # Process selected channel into signal
-			ds = Dataset(path=path, name=name, channel=selected_channel, signal=signal)
+			ds = Dataset(path=path, channel=selected_channel)
 
 			item = QListWidgetItem(self.dataset_list)
-			row = DatasetRow(f"{name} (C{selected_channel})", ds, self.viewer)
+			# TODO: standarize name
+			row = DatasetRow(f"{ds.name} (C{selected_channel})", ds, self.viewer)
 			row.bind(self.dataset_list, item) 
 			item.setSizeHint(row.sizeHint())
 			self.dataset_list.addItem(item)
