@@ -45,7 +45,7 @@ class CalibrationWidget(QWidget):
 
 		box = QGroupBox("Reference (Calibration)", self)
 		form = QFormLayout()
-		form.setContentsMargins(5,15,5,5)
+		form.setContentsMargins(5,10,5,5)
 		box.setLayout(form)
 
 		# Channel selection

@@ -10,6 +10,7 @@ from qtpy.QtWidgets import (
 	QWidget,
 	QHBoxLayout,
 	QVBoxLayout,
+	QGridLayout,
 	QGroupBox,
 	QFormLayout,
 	QPushButton,
@@ -156,46 +157,85 @@ class SampleManagerWidget(QWidget):
 
 	## ------ UI ------ ##
 	def _build(self) -> None:
-		root = QVBoxLayout(self)
+		root = QVBoxLayout()
+		self.setLayout(root)
+
+		#  --- Dataset controls --- 
+		dataset_control = QGroupBox("Dataset control")
+		dataset_control_layout = QGridLayout(dataset_control)
+		dataset_control_layout.setContentsMargins(5,10,5,5)
+		root.addWidget(dataset_control)
 
 		# File loading
-		load_row = QHBoxLayout()
 		self.le_channel = QLabel()
 		self.le_channel.setText("Channel:")
 		self.channel_selector = QSpinBox()
 		self.channel_selector.setRange(0, 99)
 		self.btn_browse_file = QPushButton("Browse file...")
 		self.btn_browse_file.clicked.connect(self._on_browse_file)
-		load_row.addWidget(self.le_channel)
-		load_row.addWidget(self.channel_selector)
-		load_row.addWidget(self.btn_browse_file)
+		dataset_control_layout.addWidget(self.le_channel, 0, 0)
+		dataset_control_layout.addWidget(self.channel_selector, 0, 1)
+		dataset_control_layout.addWidget(self.btn_browse_file, 0, 2, 1, 2)
 
-		# Control buttons
+		# Grouping
+		self.le_group = QLineEdit()
+		self.le_group.setPlaceholderText("Enter group name")
+		self.btn_assign_group = QPushButton("Group selected")
+		self.btn_assign_group.setToolTip("Assign selected datasets to the group name entered above")
+		self.btn_assign_group.setEnabled(False)
+		# TODO: Connect clicked signal
+		dataset_control_layout.addWidget(self.le_group, 1, 0)
+		dataset_control_layout.addWidget(self.btn_assign_group, 1, 1)
+		# Calibration
 		self.btn_calibrate = QPushButton("Calibrate selected")
 		self.btn_calibrate.clicked.connect(self._on_calibrate_selected)
 		self.btn_calibrate.setEnabled(False)
-		self.btn_visualize = QPushButton("Phasor plot")
-		self.btn_visualize.clicked.connect(self._on_visualize_selected)
-		self.btn_visualize.setEnabled(False)
-		button_row = QHBoxLayout()
-		button_row.addWidget(self.btn_calibrate)
-		button_row.addWidget(self.btn_visualize)
+		dataset_control_layout.addWidget(self.btn_calibrate, 1, 2, 1, 2)
 
-		# Dataset list
+		# Filter control
+		# Second row: photon count thresholding
+		min_count_label = QLabel("Min photon count")
+		max_count_label = QLabel("Max photon count")
+		self.min_count = QSpinBox()
+		self.min_count.setRange(0, int(1e9))
+		self.max_count = QSpinBox()
+		self.max_count.setRange(1, int(1e9))
+		self.max_count.setValue(10000)
+		dataset_control_layout.addWidget(min_count_label, 2, 0)
+		dataset_control_layout.addWidget(self.min_count, 2, 1)
+		dataset_control_layout.addWidget(max_count_label, 2, 2)
+		dataset_control_layout.addWidget(self.max_count, 2, 3)
+		# Second row: median filter
+		kernel_size_label = QLabel("Median filter size")
+		repetition_label = QLabel("Median filter repetition")
+		self.kernel_size = QSpinBox()
+		self.kernel_size.setRange(1, 99)
+		self.kernel_size.setValue(3)
+		self.repetition = QSpinBox()
+		self.repetition.setRange(0, 99)
+		dataset_control_layout.addWidget(kernel_size_label, 3, 0)
+		dataset_control_layout.addWidget(self.kernel_size, 3, 1)
+		dataset_control_layout.addWidget(repetition_label, 3, 2)
+		dataset_control_layout.addWidget(self.repetition, 3, 3)
+
+		# --- Dataset list ---
 		self.dataset_list = QListWidget()
 		self.dataset_list.setSelectionMode(self.dataset_list.ExtendedSelection)
 		self.dataset_list.setSpacing(0)
 		self.dataset_list.itemSelectionChanged.connect(self._on_selection_changed)
+		root.addWidget(self.dataset_list)
+
+		# Open phasor plot buttn
+		self.btn_visualize = QPushButton("Visualize selected in phasor plot")
+		self.btn_visualize.clicked.connect(self._on_visualize_selected)
+		self.btn_visualize.setEnabled(False)
+		root.addWidget(self.btn_visualize)
 
 		# Summary statistics access button
 		self.btn_summary = QPushButton("View/Export Summary")
 		self.btn_summary.setToolTip("View/Export summary statistics of selected samples")
 		self.btn_summary.clicked.connect(self._on_btn_summary_clicked)
 		self.btn_summary.setEnabled(False)
-
-		root.addLayout(load_row)
-		root.addLayout(button_row)
-		root.addWidget(self.dataset_list)
 		root.addWidget(self.btn_summary)
 
 	## ------ Public API ------ ##
@@ -243,6 +283,7 @@ class SampleManagerWidget(QWidget):
 		Disable the buttons if no item is selected.
 		"""
 		has_selected = len(self.dataset_list.selectedItems())>0
+		self.btn_assign_group.setEnabled(has_selected)
 		self.btn_calibrate.setEnabled(has_selected)
 		self.btn_visualize.setEnabled(has_selected)
 		self.btn_summary.setEnabled(has_selected)
