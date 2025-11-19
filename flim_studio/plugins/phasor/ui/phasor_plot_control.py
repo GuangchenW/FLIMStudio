@@ -107,27 +107,6 @@ class PhasorControlPanel(QGroupBox):
 		return params
 
 	## ------ Internal ------ ##
-	def _validate_dataset_consistency(self) -> tuple[int|None,int|None,int|None,int|None]:
-		"""
-		Return the filter parameters stored in selected datasets.
-		If the parameter value match for all selected datasets, return the value.
-		Otherwise, return None
-		"""
-		datasets = self.get_selected_datasets()
-		if not datasets: return (None, None, None, None)
-
-		attrs = ("min_count", "max_count", "kernel_size", "repetition")
-		baseline = datasets[0]
-		values = {name: getattr(baseline, name) for name in attrs}
-
-		# Compare subsequent datasets to the baseline, invalidating if mismatch.
-		for ds in datasets[1:]:
-			for name in attrs:
-				if values[name] is not None and getattr(ds, name) != values[name]:
-					values[name] = None
-
-		return tuple(values[name] for name in attrs)
-
 	def _on_btn_draw_clicked(self) -> None:
 		self.plotPhasor.emit()
 
