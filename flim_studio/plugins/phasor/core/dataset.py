@@ -46,7 +46,7 @@ class Dataset:
 
 		# Filter parameters
 		self.min_count: int = 0
-		self.max_count: int = int(1e9)
+		self.max_count: int = 10000
 		self.kernel_size: int = 3
 		self.repetition: int = 0
 		# Cached photon count thresholding mask
@@ -117,6 +117,9 @@ class Dataset:
 		out["m_lifetime"] = self.modulation_lifetime.flatten()
 		out["proj_lifetime"] = self.normal_lifetime.flatten()
 		return out
+
+	def display_name(self) -> str:
+		return f"{self.name} (C{self.channel}) [{self.group}]"
 
 	## ------ Internal ------ ##
 	def _photon_range_mask(self) -> np.ndarray:

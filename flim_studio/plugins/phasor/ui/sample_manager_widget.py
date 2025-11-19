@@ -43,13 +43,12 @@ class DatasetRow(QWidget):
 
 	def __init__(
 		self,
-		name:str,
 		dataset:Dataset,
 		viewer:"napari.Viewer",
 		parent:Optional[QWidget]=None
 	):
 		super().__init__(parent)
-		self.name = name
+		self.name = dataset.name
 		self.dataset = dataset
 		self.viewer = viewer
 		self._list: QListWidget|None = None
@@ -61,7 +60,7 @@ class DatasetRow(QWidget):
 	## ------ UI ------ ##
 	def _build(self) -> None:
 		layout = QHBoxLayout(self)
-		self.label = QLabel(self.name)
+		self.label = QLabel(self.dataset.display_name())
 		self.btn_delete = ThemedButton(icon="delete", viewer=self.viewer)
 		self.btn_delete.setToolTip("Remove dataset")
 		self.btn_delete.clicked.connect(self._on_removal)
@@ -113,6 +112,9 @@ class DatasetRow(QWidget):
 		if self.indicator.state() == "ok":
 			self.indicator.set_state("warn")
 
+	def set_text(self, text:str) -> None:
+		self.label.setText(text)
+
 	## ------ Internal ------ ##
 	def _on_removal(self) -> None:
 		if not (self._list and self._item):
@@ -125,7 +127,7 @@ class DatasetRow(QWidget):
 
 	def _on_show(self) -> None:
 		if self.dataset is None:
-			raise RuntimeError(f"Sample {name} does not have a dataset")
+			raise RuntimeError(f"Sample {self.name} does not have a dataset")
 		# Show lifetime map
 		match self.lifetime_combo_box.currentText():
 			case "none":
@@ -184,14 +186,12 @@ class SampleManagerWidget(QWidget):
 		self.le_group.setPlaceholderText("Enter group name")
 		self.btn_assign_group = QPushButton("Group selected")
 		self.btn_assign_group.setToolTip("Assign selected datasets to the group name entered above")
-		self.btn_assign_group.setEnabled(False)
-		# TODO: Connect clicked signal
+		self.btn_assign_group.clicked.connect(self._on_btn_assign_group_clicked)
 		dataset_control_layout.addWidget(self.le_group, 1, 0)
 		dataset_control_layout.addWidget(self.btn_assign_group, 1, 1)
 		# Calibration
 		self.btn_calibrate = QPushButton("Calibrate selected")
 		self.btn_calibrate.clicked.connect(self._on_calibrate_selected)
-		self.btn_calibrate.setEnabled(False)
 		dataset_control_layout.addWidget(self.btn_calibrate, 1, 2, 1, 2)
 
 		# Filter control
@@ -243,15 +243,16 @@ class SampleManagerWidget(QWidget):
 		# Open phasor plot buttn
 		self.btn_visualize = QPushButton("Visualize selected in phasor plot")
 		self.btn_visualize.clicked.connect(self._on_visualize_selected)
-		self.btn_visualize.setEnabled(False)
 		root.addWidget(self.btn_visualize)
 
 		# Summary statistics access button
 		self.btn_summary = QPushButton("View/Export Summary")
 		self.btn_summary.setToolTip("View/Export summary statistics of selected samples")
 		self.btn_summary.clicked.connect(self._on_btn_summary_clicked)
-		self.btn_summary.setEnabled(False)
 		root.addWidget(self.btn_summary)
+
+		# Initialize the state of all selection related buttons
+		self._on_selection_changed()
 
 	## ------ Public API ------ ##
 	def get_selected_rows(self) -> List[DatasetRow]:
@@ -285,8 +286,7 @@ class SampleManagerWidget(QWidget):
 			ds = Dataset(path=path, channel=selected_channel)
 
 			item = QListWidgetItem(self.dataset_list)
-			# TODO: standarize name
-			row = DatasetRow(f"{ds.name} (C{selected_channel})", ds, self.viewer)
+			row = DatasetRow(ds, self.viewer)
 			row.bind(self.dataset_list, item) 
 			item.setSizeHint(row.sizeHint())
 			self.dataset_list.addItem(item)
@@ -308,7 +308,6 @@ class SampleManagerWidget(QWidget):
 				spinbox = getattr(self, k)
 				spinbox.setValue(spinbox.minimum() if v is None else v)
 
-
 	def _on_calibrate_selected(self) -> None:
 		"""
 		Get the DatasetRow widget in the list items and make them compute phasor given the calibration.
@@ -316,6 +315,18 @@ class SampleManagerWidget(QWidget):
 		rows = self.get_selected_rows()
 		for r in rows:
 			r.calibrate_phasor(self.calibration)
+
+	def _on_btn_assign_group_clicked(self) -> None:
+		"""
+		Set the group of selected datasets to the group specified in le_group.
+		Then refresh the names of selected list items.
+		"""
+		group = self.le_group.text()
+		for item in self.dataset_list.selectedItems():
+			dataset_row = self.dataset_list.itemWidget(item)
+			dataset = dataset_row.dataset
+			dataset.group = group
+			dataset_row.set_text(dataset.display_name())
 
 	def _on_btn_apply_filter_clicked(self) -> None:
 		datasets = self.get_selected_datasets()
