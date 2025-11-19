@@ -128,7 +128,7 @@ class DatasetRow(QWidget):
 		# Show lifetime map
 		match self.lifetime_combo_box.currentText():
 			case "none":
-				LayerManager().add_image(self.dataset.total, name=self.dataset.name, overwrite=True)
+				LayerManager().add_image(self.dataset.counts, name=self.dataset.name, overwrite=True)
 			case "phi":
 				LayerManager().add_image(self.dataset.phase_lifetime, name=self.dataset.name, overwrite=True)
 			case "M":
@@ -174,7 +174,7 @@ class SampleManagerWidget(QWidget):
 		self.btn_calibrate = QPushButton("Calibrate selected")
 		self.btn_calibrate.clicked.connect(self._on_calibrate_selected)
 		self.btn_calibrate.setEnabled(False)
-		self.btn_visualize = QPushButton("Visualize selected")
+		self.btn_visualize = QPushButton("Phasor plot")
 		self.btn_visualize.clicked.connect(self._on_visualize_selected)
 		self.btn_visualize.setEnabled(False)
 		button_row = QHBoxLayout()

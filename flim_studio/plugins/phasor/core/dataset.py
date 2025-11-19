@@ -17,7 +17,7 @@ class Dataset:
 	__slots__ = ("path", "name", "channel", "signal", "frequency", "counts", "mean",
 		"real_raw", "imag_raw", "real_calibrated", "imag_calibrated", "g", "s",
 		"phase_lifetime", "modulation_lifetime", "normal_lifetime", "max_count",
-		"min_count", "kernel_size", "repetition", "group")
+		"min_count", "kernel_size", "repetition", "mask", "group")
 
 	def __init__(self, path:str|Path, channel:int):
 		if not os.path.isfile(path):
@@ -49,6 +49,8 @@ class Dataset:
 		self.max_count: int = int(1e9)
 		self.kernel_size: int = 3
 		self.repetition: int = 0
+		# Cached photon count thresholding mask
+		self.mask = np.ones_like(self.mean, dtype=np.uint8)
 
 		# Misc attributes
 		self.group: str = "default"
@@ -93,9 +95,9 @@ class Dataset:
 		Note that this turns the pixels outside the thresholds to nan.
 		"""
 		labels = self._photon_range_mask()
-		mask = (labels == 1)
+		self.mask = (labels == 1)
 		# Set filtered pixels to 0, this is to maintain shape 
-		self.g[~mask] = np.nan; self.s[~mask] = np.nan
+		self.g[~self.mask] = np.nan; self.s[~self.mask] = np.nan
 
 	def photon_sum(self) -> np.ndarray:
 		"""

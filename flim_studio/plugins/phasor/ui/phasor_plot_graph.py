@@ -82,9 +82,9 @@ class PhasorGraphWidget(MPLGraph):
 		:param mode: Plotting mode. Accepts plot, hist2d, contour. Default contour.
 		:param color: Plot color. 
 		"""
-		dataset.reset_gs()
-		dataset.apply_median_filter(median_filter_size, median_filter_repetition)
-		dataset.apply_photon_threshold(min_photon_count, max_photon_count)
+		#dataset.reset_gs()
+		#dataset.apply_median_filter(median_filter_size, median_filter_repetition)
+		#dataset.apply_photon_threshold(min_photon_count, max_photon_count)
 		dataset.compute_lifetime_estimates()
 		# Slice only meaningful values for efficient plotting
 		# HACK: A little hacky, probably should let Dataset do this
