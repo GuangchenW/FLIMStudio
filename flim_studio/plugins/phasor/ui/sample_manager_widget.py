@@ -153,6 +153,8 @@ class SampleManagerWidget(QWidget):
 		self.calibration = cal_widget.calibration
 		# Set up connect to update status od datasets
 		cal_widget.calibrationChanged.connect(self._mark_all_stale)
+		self.param_names: list[str] = ["min_count", "max_count", "kernel_size", "repetition"]
+
 		self._build()
 
 	## ------ UI ------ ##
@@ -197,13 +199,11 @@ class SampleManagerWidget(QWidget):
 		min_count_label = QLabel("Min photon count")
 		max_count_label = QLabel("Max photon count")
 		self.min_count = QSpinBox()
-		self.min_count.setRange(-1, int(1e9))
+		self.min_count.setRange(0, int(1e9))
 		self.min_count.setValue(0)
-		self.min_count.setSpecialValueText('...')
 		self.max_count = QSpinBox()
-		self.max_count.setRange(0, int(1e9))
+		self.max_count.setRange(1, int(1e9))
 		self.max_count.setValue(10000)
-		self.max_count.setSpecialValueText('...')
 		dataset_control_layout.addWidget(min_count_label, 2, 0)
 		dataset_control_layout.addWidget(self.min_count, 2, 1)
 		dataset_control_layout.addWidget(max_count_label, 2, 2)
@@ -212,13 +212,11 @@ class SampleManagerWidget(QWidget):
 		kernel_size_label = QLabel("Median filter size")
 		repetition_label = QLabel("Median filter repetition")
 		self.kernel_size = QSpinBox()
-		self.kernel_size.setRange(1, 99)
+		self.kernel_size.setRange(2, 99)
 		self.kernel_size.setValue(3)
-		self.kernel_size.setSpecialValueText('...')
 		self.repetition = QSpinBox()
-		self.repetition.setRange(-1, 99)
+		self.repetition.setRange(0, 99)
 		self.repetition.setValue(0)
-		self.repetition.setSpecialValueText('...')
 		dataset_control_layout.addWidget(kernel_size_label, 3, 0)
 		dataset_control_layout.addWidget(self.kernel_size, 3, 1)
 		dataset_control_layout.addWidget(repetition_label, 3, 2)
@@ -227,6 +225,13 @@ class SampleManagerWidget(QWidget):
 		self.btn_apply_filter = QPushButton("Apply filter")
 		self.btn_apply_filter.clicked.connect(self._on_btn_apply_filter_clicked)
 		dataset_control_layout.addWidget(self.btn_apply_filter, 4, 0, 1, 4)
+		# To make the special text work as intended,
+		# while making the instantiation easy to understand,
+		# we decrement the minimum of these spinbox by 1
+		for name in self.param_names:
+			spinbox = getattr(self, name)
+			spinbox.setSpecialValueText("...")
+			spinbox.setMinimum(spinbox.minimum()-1)
 
 		# --- Dataset list ---
 		self.dataset_list = QListWidget()
@@ -314,16 +319,18 @@ class SampleManagerWidget(QWidget):
 
 	def _on_btn_apply_filter_clicked(self) -> None:
 		datasets = self.get_selected_datasets()
-		param_names = ["min_count", "max_count", "kernel_size", "repetition"]
+		param_vals = self._get_filter_param_values()
+		for ds in datasets:
+			for name in self.param_names:
+				if param_vals[name]: setattr(ds, name, param_vals[name])
+
+	def _get_filter_param_values(self) -> dict[str,int]:
 		param_vals = {}
-		for name in param_names:
+		for name in self.param_names:
 			spinbox = getattr(self, name)
 			val = spinbox.value()
-			minimum = spinbox.minimum()
-			param_vals[name] = None if val <= minimum else val
-		for ds in datasets:
-			for name in param_names:
-				if param_vals[name]: setattr(ds, name, param_vals[name])
+			param_vals[name] = None if val == spinbox.minimum() else val
+		return param_vals
 	
 	def _on_visualize_selected(self) -> None:
 		"""
