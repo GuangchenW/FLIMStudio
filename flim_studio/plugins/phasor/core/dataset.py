@@ -29,7 +29,7 @@ class Dataset:
 		self.signal: "xarray.DataArray" = load_signal(path, channel)
 
 		# Derived attributes
-		self.counts: np.ndarray = self.photon_sum() # Sum of photon counts over H axis
+		self.counts: np.ndarray = self._photon_sum() # Sum of photon counts over H axis
 		# Raw immutable phasor attributes
 		self.mean, self.real_raw, self.imag_raw = phasor_from_signal(self.signal, axis='H')
 		# Last seen frequency (MHz)
@@ -73,12 +73,14 @@ class Dataset:
 		self._compute_apparent_lifetime(self.frequency)
 		self._compute_normal_lifetime(self.frequency)
 
-	def reset_gs(self) -> None:
-		"""
-		Reset g and s to calibrated phasor.
-		"""
-		self.g = self.real_calibrated.copy()
-		self.s = self.imag_calibrated.copy()
+	## ------ Working functions ------ ##
+	def apply_filters(self) -> None:
+		self.reset_gs()
+		self.apply_median_filter()
+		self.update_photon_mask()
+		self.apply_photon_mask()
+		# We always update lifetime estimates to keep everything in sync
+		self.compute_lifetime_estimates()
 
 	def apply_median_filter(self) -> None:
 		"""
@@ -86,25 +88,30 @@ class Dataset:
 		"""
 		if self.repetition < 1: return
 		if self.kernel_size < 3: return
-		# Mean is unchanged per documentation
 		_, self.g, self.s = phasor_filter_median(self.mean, self.g, self.s, repeat=self.repetition, size=self.kernel_size)
 
-	def apply_photon_threshold(self) -> None:
+	def update_photon_mask(self) -> None:
 		"""
-		Filter g and s based on total photon count of raw signal.
-		Note that this turns the pixels outside the thresholds to nan.
+		Update mask based on current photon count threshold
 		"""
 		labels = self._photon_range_mask()
 		self.mask = (labels == 1)
-		# Set filtered pixels to 0, this is to maintain shape 
+
+	def apply_photon_mask(self) -> None:
+		"""
+		Mask g and s using the photon count mask.
+		This turns the pixels outside the mask to nan.
+		"""
 		self.g[~self.mask] = np.nan; self.s[~self.mask] = np.nan
 
-	def photon_sum(self) -> np.ndarray:
+	def reset_gs(self) -> None:
 		"""
-		Sum raw signal over time-axis => photon counts per pixel.
-		Returns (Y,X) uint32 np.ndarray.
+		Reset g and s to calibrated phasor.
 		"""
-		return self.signal.sum(dim='H').to_numpy()
+		self.g = self.real_calibrated.copy()
+		self.s = self.imag_calibrated.copy()
+
+	## ------ Misc ------ ##
 
 	def summarize(self) -> dict:
 		# TODO: Maybe find a way to standarize the property names
@@ -122,6 +129,10 @@ class Dataset:
 		return f"{self.name} (C{self.channel}) [{self.group}]"
 
 	## ------ Internal ------ ##
+	def _photon_sum(self) -> np.ndarray:
+		# Sum raw signal over time-axis => photon counts per pixel.
+		return self.signal.sum(dim='H').to_numpy()
+
 	def _photon_range_mask(self) -> np.ndarray:
 		"""
 		Return a labels mask (Y,X) with values: 0=low, 1=kept, 2=high.

@@ -333,7 +333,10 @@ class SampleManagerWidget(QWidget):
 		param_vals = self._get_filter_param_values()
 		for ds in datasets:
 			for name in self.param_names:
-				if param_vals[name]: setattr(ds, name, param_vals[name])
+				# Only set if the value is not None, i.e. the spinbox is not special text
+				if param_vals[name]:
+					setattr(ds, name, param_vals[name])
+			ds.apply_filters()
 
 	def _get_filter_param_values(self) -> dict[str,int]:
 		param_vals = {}
