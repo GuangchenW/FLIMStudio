@@ -91,7 +91,4 @@ class PhasorPlotWidget(QWidget):
 		if len(datasets) <= 0: return # Should not happen but safeguard
 
 		self.phasor_graph_widget.clear()
-		# TODO: might want to give each dataset its own color/colormap
-		for ds in datasets:
-			self.phasor_graph_widget.draw_dataset(ds, **params)
-		self.phasor_graph_widget.draw_idle()
+		self.phasor_graph_widget.draw_datasets(datasets, **params)

@@ -9,6 +9,7 @@ from phasorpy.phasor import phasor_from_signal, phasor_filter_median
 from phasorpy.lifetime import phasor_to_apparent_lifetime, phasor_to_normal_lifetime
 
 from flim_studio.core.io import load_signal
+from flim_studio.core.utils import str2color
 
 if TYPE_CHECKING:
 	import xarray
@@ -17,7 +18,7 @@ class Dataset:
 	__slots__ = ("path", "name", "channel", "signal", "frequency", "counts", "mean",
 		"real_raw", "imag_raw", "real_calibrated", "imag_calibrated", "g", "s",
 		"phase_lifetime", "modulation_lifetime", "normal_lifetime", "max_count",
-		"min_count", "kernel_size", "repetition", "mask", "group")
+		"min_count", "kernel_size", "repetition", "mask", "group", "color")
 
 	def __init__(self, path:str|Path, channel:int):
 		if not os.path.isfile(path):
@@ -54,17 +55,15 @@ class Dataset:
 
 		# Misc attributes
 		self.group: str = "default"
+		self.color: str = str2color(self.group)
 
 	def calibrate_phasor(self, calibration:"Calibration") -> None:
 		self.real_calibrated, self.imag_calibrated = calibration.compute_calibrated_phasor(self.real_raw, self.imag_raw)
-		# Update working copy
-		self.g = self.real_calibrated.copy()
-		self.s = self.imag_calibrated.copy()
 		# Update last seen frequency if calibration is provided
 		if calibration and calibration.frequency > 0:
 			self.frequency = calibration.frequency
-		# Every time we re-calibrate, re-compute lifetime estimates
-		self.compute_lifetime_estimates()
+		# Every time we re-calibrate, re-compute working data
+		self.apply_filters()
 
 	def compute_lifetime_estimates(self) -> None:
 		"""
@@ -112,6 +111,9 @@ class Dataset:
 		self.s = self.imag_calibrated.copy()
 
 	## ------ Misc ------ ##
+	def set_group(self, group:str) -> None:
+		self.group = group
+		self.color = str2color(group)
 
 	def summarize(self) -> dict:
 		# TODO: Maybe find a way to standarize the property names

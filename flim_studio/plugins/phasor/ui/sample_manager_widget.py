@@ -322,10 +322,11 @@ class SampleManagerWidget(QWidget):
 		Then refresh the names of selected list items.
 		"""
 		group = self.le_group.text()
+		if not group: group = "default"
 		for item in self.dataset_list.selectedItems():
 			dataset_row = self.dataset_list.itemWidget(item)
 			dataset = dataset_row.dataset
-			dataset.group = group
+			dataset.set_group(group)
 			dataset_row.set_text(dataset.display_name())
 
 	def _on_btn_apply_filter_clicked(self) -> None:

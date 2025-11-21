@@ -56,10 +56,11 @@ class PhasorControlPanel(QGroupBox):
 		# Color map
 		cmap_label = QLabel("Color map")
 		self.cmap_combo_box = QComboBox()
+		self.cmap_combo_box.addItem("by group")
 		cmap_names = plt.colormaps()
 		for name in cmap_names:
 			self.cmap_combo_box.addItem(name)
-		self.cmap_combo_box.setCurrentText("jet")
+		self.cmap_combo_box.setCurrentText("by group")
 		ctrl_grid.addWidget(cmap_label, 0, 2)
 		ctrl_grid.addWidget(self.cmap_combo_box, 0, 3)
 		# Last row: Draw button
@@ -95,11 +96,8 @@ class PhasorControlPanel(QGroupBox):
 	def get_params(self) -> Dict[str,Any]:
 		"""
 		Return a dictionary of control parameters. The keys match those in PhasorGraphWidget.draw_dataset.
-		min_photon_count: minimum photon count
-		max_photon_count: maximum photon count
-		median_filter_size: median filter kernel size
-		median_filter_repetition: median filter repetition
 		mode: plotting mode
+		cmap: colormap or 'by group'
 		"""
 		params = {}
 		params["mode"] = self.mode_combo_box.currentText()
