@@ -81,11 +81,11 @@ class PhasorGraphWidget(MPLGraph):
 		mode: Literal["scatter","hist2d","contour"] = "contour",
 		cmap: str = "by group"
 	) -> None:
-	"""
-	Plor the phasor of a list of datasets.
-	If cmap == 'by group', the color defined within datasets are used.
-	Otheriwse, use the specified cmap for all datasets.
-	"""
+		"""
+		Plot the phasor of a list of datasets.
+		If cmap == 'by group', the color defined within datasets are used.
+		Otheriwse, use the specified cmap for all datasets.
+		"""
 		legend = {}
 		for ds in datasets:
 			if cmap == "by group":
