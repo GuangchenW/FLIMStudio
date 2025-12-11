@@ -12,6 +12,7 @@ sdtfile = "*"
 ptufile = "*"
 tiffile = "*"
 napari = {extras = ["all"], version = "*"}
+flimlib = "*"
 
 [dev-packages]
 
