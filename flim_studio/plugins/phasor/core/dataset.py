@@ -6,7 +6,11 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from phasorpy.phasor import phasor_from_signal, phasor_filter_median
-from phasorpy.lifetime import phasor_to_apparent_lifetime, phasor_to_normal_lifetime
+from phasorpy.lifetime import (
+	phasor_to_apparent_lifetime,
+	phasor_to_normal_lifetime,
+	phasor_to_lifetime_search,
+)
 
 from flim_studio.core.io import load_signal
 from flim_studio.core.utils import str2color
@@ -17,8 +21,8 @@ if TYPE_CHECKING:
 class Dataset:
 	__slots__ = ("path", "name", "channel", "signal", "frequency", "counts", "mean",
 		"real_raw", "imag_raw", "real_calibrated", "imag_calibrated", "g", "s",
-		"phase_lifetime", "modulation_lifetime", "normal_lifetime", "max_count",
-		"min_count", "kernel_size", "repetition", "mask", "group", "color")
+		"phase_lifetime", "modulation_lifetime", "normal_lifetime", "geo_lifetime", "geo_fraction", "avg_lifetime",
+		"max_count", "min_count", "kernel_size", "repetition", "mask", "group", "color")
 
 	def __init__(self, path:str|Path, channel:int):
 		if not os.path.isfile(path):
@@ -67,10 +71,12 @@ class Dataset:
 
 	def compute_lifetime_estimates(self) -> None:
 		"""
-		Compute and cache apparent and projected lifetime.
+		Compute and cache lifetime estimates.
 		"""
-		self._compute_apparent_lifetime(self.frequency)
-		self._compute_normal_lifetime(self.frequency)
+		self.phase_lifetime, self.modulation_lifetime = phasor_to_apparent_lifetime(*self.get_phasor(), frequency=self.frequency)
+		self.normal_lifetime = phasor_to_normal_lifetime(*self.get_phasor(), frequency=self.frequency)
+		self.geo_lifetime, self.geo_fraction = phasor_to_lifetime_search(self.g, self.s, frequency=self.frequency)
+		self.avg_lifetime = (self.geo_lifetime*self.geo_fraction).sum(axis=0)
 
 	## ------ Working functions ------ ##
 	def apply_filters(self) -> None:
@@ -159,14 +165,3 @@ class Dataset:
 		labels[high] = 2
 		return labels
 
-	def _compute_apparent_lifetime(self, frequency:float) -> None:
-		"""
-		Return apparent lifetime using the fundamental frequency.
-		"""
-		self.phase_lifetime, self.modulation_lifetime = phasor_to_apparent_lifetime(*self.get_phasor(), frequency=self.frequency)
-
-	def _compute_normal_lifetime(self, frequency:float) -> None:
-		"""
-		Return projected lifetime using the fundamental frequency.
-		"""
-		self.normal_lifetime = phasor_to_normal_lifetime(*self.get_phasor(), frequency=self.frequency)
