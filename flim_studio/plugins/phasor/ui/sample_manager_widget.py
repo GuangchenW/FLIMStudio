@@ -72,12 +72,13 @@ class DatasetRow(QWidget):
 		self.lifetime_combo_box = QComboBox()
 		self.lifetime_combo_box.setToolTip((
 			"Select lifetime estimations.\n'non': original signal\n'phi': apparent phase lifetime\n"
-			"'M': apparent modulation lifetime\nproj: projected lifetime"
+			"'M': apparent modulation lifetime\nproj: projected lifetime\navg: average geometric-search lifetime"
 		))
 		self.lifetime_combo_box.addItem("none")
 		self.lifetime_combo_box.addItem("phi")
 		self.lifetime_combo_box.addItem("M")
 		self.lifetime_combo_box.addItem("proj")
+		self.lifetime_combo_box.addItem("avg")
 		self.lifetime_combo_box.currentIndexChanged.connect(lambda i : self._on_show())
 		# Indicator for calibration status
 		self.indicator = Indicator()
@@ -131,13 +132,15 @@ class DatasetRow(QWidget):
 		# Show lifetime map
 		match self.lifetime_combo_box.currentText():
 			case "none":
-				LayerManager().add_image(self.dataset.counts, name=self.dataset.name, overwrite=True)
+				LayerManager().add_image(self.dataset.counts_filtered, name=self.dataset.name, overwrite=True)
 			case "phi":
 				LayerManager().add_image(self.dataset.phase_lifetime, name=self.dataset.name, overwrite=True)
 			case "M":
 				LayerManager().add_image(self.dataset.modulation_lifetime, name=self.dataset.name, overwrite=True)
 			case "proj":
 				LayerManager().add_image(self.dataset.normal_lifetime, name=self.dataset.name, overwrite=True)
+			case "avg":
+				LayerManager().add_image(self.dataset.avg_lifetime, name=self.dataset.name, overwrite=True)
 
 class SampleManagerWidget(QWidget):
 	def __init__(
@@ -330,14 +333,16 @@ class SampleManagerWidget(QWidget):
 			dataset_row.set_text(dataset.display_name())
 
 	def _on_btn_apply_filter_clicked(self) -> None:
-		datasets = self.get_selected_datasets()
+		dataset_rows = self.get_selected_rows()
 		param_vals = self._get_filter_param_values()
-		for ds in datasets:
+		for row in dataset_rows:
+			ds = row.dataset
 			for name in self.param_names:
 				# Only set if the value is not None, i.e. the spinbox is not special text
-				if param_vals[name]:
+				if param_vals[name] is not None:
 					setattr(ds, name, param_vals[name])
 			ds.apply_filters()
+			row._on_show()
 
 	def _get_filter_param_values(self) -> dict[str,int]:
 		param_vals = {}

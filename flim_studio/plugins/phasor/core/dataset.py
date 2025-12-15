@@ -19,8 +19,8 @@ if TYPE_CHECKING:
 	import xarray
 
 class Dataset:
-	__slots__ = ("path", "name", "channel", "signal", "frequency", "counts", "mean",
-		"real_raw", "imag_raw", "real_calibrated", "imag_calibrated", "g", "s",
+	__slots__ = ("path", "name", "channel", "signal", "frequency", "counts", "counts_filtered",
+		"mean", "real_raw", "imag_raw", "real_calibrated", "imag_calibrated", "g", "s",
 		"phase_lifetime", "modulation_lifetime", "normal_lifetime", "geo_lifetime", "geo_fraction", "avg_lifetime",
 		"max_count", "min_count", "kernel_size", "repetition", "mask", "group", "color")
 
@@ -35,6 +35,7 @@ class Dataset:
 
 		# Derived attributes
 		self.counts: np.ndarray = self._photon_sum() # Sum of photon counts over H axis
+		self.counts_filtered: np.ndarray = self.counts.copy() # Photon counts but filtered with threshold
 		# Raw immutable phasor attributes
 		self.mean, self.real_raw, self.imag_raw = phasor_from_signal(self.signal, axis='H', harmonic=[1,2])
 		# Last seen frequency (MHz)
@@ -77,6 +78,8 @@ class Dataset:
 		self.normal_lifetime = phasor_to_normal_lifetime(*self.get_phasor(), frequency=self.frequency)
 		self.geo_lifetime, self.geo_fraction = phasor_to_lifetime_search(self.g, self.s, frequency=self.frequency)
 		self.avg_lifetime = (self.geo_lifetime*self.geo_fraction).sum(axis=0)
+		#DEBUG
+		self.avg_lifetime[self.avg_lifetime>10] = np.nan
 
 	## ------ Working functions ------ ##
 	def apply_filters(self) -> None:
@@ -91,8 +94,8 @@ class Dataset:
 		"""
 		Apply median filter to g and s.
 		"""
-		if self.repetition < 1: return
 		if self.kernel_size < 3: return
+		if self.repetition < 1: return
 		_, self.g, self.s = phasor_filter_median(self.mean, self.g, self.s, repeat=self.repetition, size=self.kernel_size)
 
 	def update_photon_mask(self) -> None:
@@ -108,6 +111,8 @@ class Dataset:
 		This turns the pixels outside the mask to nan.
 		"""
 		self.g[:,~self.mask] = np.nan; self.s[:,~self.mask] = np.nan
+		self.counts_filtered = self.counts.copy()
+		self.counts_filtered[~self.mask] = 0 # numpy int cannot be nan
 
 	def reset_gs(self) -> None:
 		"""
