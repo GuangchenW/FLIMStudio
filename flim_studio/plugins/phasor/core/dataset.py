@@ -32,7 +32,7 @@ class Dataset:
 		# Derived attributes
 		self.counts: np.ndarray = self._photon_sum() # Sum of photon counts over H axis
 		# Raw immutable phasor attributes
-		self.mean, self.real_raw, self.imag_raw = phasor_from_signal(self.signal, axis='H')
+		self.mean, self.real_raw, self.imag_raw = phasor_from_signal(self.signal, axis='H', harmonic=[1,2])
 		# Last seen frequency (MHz)
 		self.frequency: float = self.signal.attrs.get("frequency", 80)
 		self.frequency = self.frequency if self.frequency > 0 else 80
@@ -101,7 +101,7 @@ class Dataset:
 		Mask g and s using the photon count mask.
 		This turns the pixels outside the mask to nan.
 		"""
-		self.g[~self.mask] = np.nan; self.s[~self.mask] = np.nan
+		self.g[:,~self.mask] = np.nan; self.s[:,~self.mask] = np.nan
 
 	def reset_gs(self) -> None:
 		"""
@@ -109,6 +109,17 @@ class Dataset:
 		"""
 		self.g = self.real_calibrated.copy()
 		self.s = self.imag_calibrated.copy()
+
+	## ------ Accessors ------ ##
+	def get_phasor(self, harmonic=1):
+		"""
+		Return g and s coordinates of the specified harmonic.
+		Default return the fundamental frequency.
+		"""
+		idx = harmonic-1
+		if idx not in range(self.g.shape[0]):
+			raise ValueError(f"Harmonic {harmonic} outside range")
+		return self.g[idx], self.s[idx]
 
 	## ------ Misc ------ ##
 	def set_group(self, group:str) -> None:
@@ -149,7 +160,13 @@ class Dataset:
 		return labels
 
 	def _compute_apparent_lifetime(self, frequency:float) -> None:
-		self.phase_lifetime, self.modulation_lifetime = phasor_to_apparent_lifetime(self.g, self.s, frequency=self.frequency)
+		"""
+		Return apparent lifetime using the fundamental frequency.
+		"""
+		self.phase_lifetime, self.modulation_lifetime = phasor_to_apparent_lifetime(*self.get_phasor(), frequency=self.frequency)
 
 	def _compute_normal_lifetime(self, frequency:float) -> None:
-		self.normal_lifetime = phasor_to_normal_lifetime(self.g, self.s, frequency=self.frequency)
+		"""
+		Return projected lifetime using the fundamental frequency.
+		"""
+		self.normal_lifetime = phasor_to_normal_lifetime(*self.get_phasor(), frequency=self.frequency)

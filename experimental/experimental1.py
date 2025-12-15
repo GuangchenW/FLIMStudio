@@ -3,7 +3,8 @@ import phasorpy
 
 from phasorpy.datasets import fetch
 from phasorpy.io import signal_from_imspector_tiff, signal_from_ptu
-from phasorpy.plot import plot_signal_image
+from phasorpy.phasor import phasor_from_signal
+from phasorpy.lifetime import phasor_calibrate, phasor_to_lifetime_search
 from phasorpy.plot import plot_phasor_image, plot_phasor
 
 from flimlib import GCI_marquardt_fitting_engine
@@ -19,17 +20,19 @@ frequency = signal.attrs['frequency']
 print(reference_signal.attrs['frequency'], frequency)
 print(signal.shape, signal.dtype)
 
-# signal["H"].diff("H").mean().item()
-print("Before call", flush=True)
-try:
-	result = GCI_marquardt_fitting_engine(
-		0.003999999984016789,
-		[[[1,2,3,4,5,7,100,70,50,43,34,25,20,16,14,12,10,8,8]]],
-		np.zeros((1,1,3), dtype=np.float32)
-	)
-	print("Call successful", flush=True)
-except Exception as e:
-	print("Call failed", flush=True)
-print("Reached")
-print(result is None)
-print(result.param)
+mean, real, imag = phasor_from_signal(signal, harmonic=[1,2])
+ref_mean, ref_real, ref_imag = phasor_from_signal(reference_signal)
+
+c_real, c_imag = phasor_calibrate(
+	real,
+	imag,
+	ref_mean,
+	ref_real,
+	ref_imag,
+	frequency=frequency,
+	lifetime=3.6
+)
+
+lifetime, fraction = phasor_to_lifetime_search(c_real, c_imag, frequency=frequency)
+np.save("lifetime.npy", lifetime)
+np.save("fraction.npy", fraction)
