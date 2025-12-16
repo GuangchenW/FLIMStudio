@@ -313,6 +313,7 @@ class SampleManagerWidget(QWidget):
 		self.btn_apply_filter.setEnabled(has_selected)
 		self.btn_visualize.setEnabled(has_selected)
 		self.btn_summary.setEnabled(has_selected)
+		self.btn_umap.setEnabled(has_selected)
 		if has_selected:
 			selection_values = self._validate_datasets_consistency(self.get_selected_datasets())
 			for k, v in selection_values.items():
