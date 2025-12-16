@@ -10,7 +10,7 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolb
 
 from phasorpy.plot import PhasorPlot
 
-from flim_studio.core.widgets import MPLGraph
+from flimari.core.widgets import MPLGraph
 
 if TYPE_CHECKING:
 	from ..core import Dataset

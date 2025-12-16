@@ -18,7 +18,7 @@ from qtpy.QtWidgets import (
 	QListWidgetItem,
 )
 
-from flim_studio.core.widgets import MPLGraph
+from flimari.core.widgets import MPLGraph
 
 if TYPE_CHECKING:
 	from ..core import Dataset

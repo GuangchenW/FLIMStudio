@@ -15,7 +15,7 @@ from qtpy.QtWidgets import (
 	QStyle
 )
 
-from flim_studio.core.widgets import AutoDoubleSpinBox
+from flimari.core.widgets import AutoDoubleSpinBox
 from ..core import Calibration
 
 

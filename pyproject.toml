@@ -1,7 +1,7 @@
 [project]
-name = "flim-studio"
+name = "flimari"
 version = "0.1.0"
-description = "FLIM Studio"
+description = "FLIMari"
 authors = [
 	{name="Guangchen Wang", email="wangg4@tcd.ie"}
 ]
@@ -31,7 +31,7 @@ classifiers = [
 ]
 
 [project.entry-points."napari.manifest"]
-"flim-studio" = "flim_studio:napari.yaml"
+"flimari" = "flimari:napari.yaml"
 
 [project.optional-dependencies]
 dev = [
@@ -51,7 +51,7 @@ build-backend = "setuptools.build_meta"
 include-package-data = true
 
 [tool.setuptools.packages.find]
-include = ["flim_studio*"]
+include = ["flimari*"]
 
 [tool.setuptools.package-data]
 flim_studio = ["napari.yaml", "**/*.yaml", "**/*.yml"]

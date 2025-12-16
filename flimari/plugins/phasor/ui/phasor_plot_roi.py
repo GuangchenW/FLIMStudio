@@ -13,7 +13,7 @@ from qtpy.QtWidgets import (
 	QListWidget,
 	QListWidgetItem
 )
-from flim_studio.core.widgets import ThemedButton, ColorButton
+from flimari.core.widgets import ThemedButton, ColorButton
 
 if TYPE_CHECKING:
 	from matplotlib.axes import Axes

@@ -1,0 +1,10 @@
+name: flimari
+display_name: FLIMari
+contributions:
+  commands:
+    - id: flimari.open_phasor_analysis
+      title: Open Phasor Analysis
+      python_name: flimari.plugins.app_shell:PhasorAnalysis
+  widgets:
+    - command: flimari.open_phasor_analysis
+      display_name: Phasor Analysis

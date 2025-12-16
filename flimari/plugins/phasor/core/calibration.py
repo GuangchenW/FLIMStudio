@@ -3,7 +3,7 @@ import numpy as np
 from phasorpy.phasor import phasor_from_signal, phasor_center, phasor_transform
 from phasorpy.lifetime import phasor_from_lifetime, polar_from_reference_phasor
 
-from flim_studio.core.io import load_signal
+from flimari.core.io import load_signal
 
 class Calibration:
 	def __init__(self) -> None:

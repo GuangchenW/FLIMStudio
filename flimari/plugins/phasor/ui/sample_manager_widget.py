@@ -24,9 +24,9 @@ from qtpy.QtWidgets import (
 	QStyle
 )
 
-from flim_studio.core.napari import LayerManager
-from flim_studio.core.io import load_signal
-from flim_studio.core.widgets import ThemedButton, Indicator
+from flimari.core.napari import LayerManager
+from flimari.core.io import load_signal
+from flimari.core.widgets import ThemedButton, Indicator
 from .phasor_plot_widget import PhasorPlotWidget
 from .summary_widget import SummaryWidget
 from ..core import Dataset

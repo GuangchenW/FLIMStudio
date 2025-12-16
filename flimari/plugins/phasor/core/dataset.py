@@ -12,8 +12,8 @@ from phasorpy.lifetime import (
 	phasor_to_lifetime_search,
 )
 
-from flim_studio.core.io import load_signal
-from flim_studio.core.utils import str2color
+from flimari.core.io import load_signal
+from flimari.core.utils import str2color
 
 if TYPE_CHECKING:
 	import xarray
