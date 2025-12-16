@@ -76,7 +76,7 @@ class PhasorPlotWidget(QWidget):
 		for i, roi in enumerate(roi_list):
 			color_dict[i+1] = to_rgb(roi.color) # Covert to 0-1 float RGB tuple
 		for ds in self._datasets:
-			labels = labels_from_roi(ds.g, ds.s, roi_list)
+			labels = labels_from_roi(*ds.get_phasor(), roi_list)
 			LayerManager().add_label(
 				labels,
 				name=ds.name,
