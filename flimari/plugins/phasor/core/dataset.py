@@ -121,8 +121,8 @@ class Dataset:
 		self.g = self.real_calibrated.copy()
 		self.s = self.imag_calibrated.copy()
 
-	## ------ Accessors ------ ##
-	def get_phasor(self, harmonic=1):
+	## ------ Public API ------ ##
+	def get_phasor(self, harmonic:int=1):
 		"""
 		Return g and s coordinates of the specified harmonic.
 		Default return the fundamental frequency.
@@ -132,7 +132,6 @@ class Dataset:
 			raise ValueError(f"Harmonic {harmonic} outside range")
 		return self.g[idx], self.s[idx]
 
-	## ------ Misc ------ ##
 	def set_group(self, group:str) -> None:
 		self.group = group
 		self.color = str2color(group)
@@ -148,6 +147,58 @@ class Dataset:
 		out["m_lifetime"] = self.modulation_lifetime.flatten()
 		out["proj_lifetime"] = self.normal_lifetime.flatten()
 		return out
+
+	def pixel_values(self, metric:str, harmonic:int=1) -> np.ndarray:
+		"""Return 1D float array of valid pixel values for a metric."""
+		match metric:
+			case "photon_count":
+				vals = self.counts[self.mask].astype(float).ravel()
+			case "g":
+				g, _ = self.get_phasor(harmonic=harmonic)
+				vals = g.ravel()
+			case "s":
+				_, s = self.get_phasor(harmonic=harmonic)
+				vals = s.ravel()
+			case "phi_lifetime":
+				vals = self.phase_lifetime.ravel()
+			case "m_lifetime":
+				vals = self.modulation_lifetime.ravel()
+			case "proj_lifetime":
+				vals = self.normal_lifetime.ravel()
+			case "avg_lifetime":
+				vals = self.avg_lifetime.ravel()
+			case "geo_tau1":
+				vals = self.geo_lifetime[0].ravel()
+			case "geo_tau2":
+				vals = self.geo_lifetime[1].ravel()
+			case "geo_frac1":
+				vals =	self.geo_fraction[0].ravel()
+			case "geo_frac2":
+				vals = ds.geo_fraction[1].ravel()
+			case _:
+				raise KeyError(metric)
+
+		return vals[np.isfinite(vals)]
+
+	def image_feature(self, metric:str, stat:str, harmonic:int=1) -> float:
+		"""Compute one image-level feature = summary stat over pixel values."""
+		v = self.pixel_values(metric, harmonic=harmonic)
+		if v.size == 0:
+			return np.nan
+		if stat == "median":
+			return np.nanmedian(v)
+		if stat == "mean":
+			return np.nanmean(v)
+		if stat == "std":
+			return np.nanstd(v)
+		if stat == "iqr":
+			q75, q25 = np.nanpercentile(v, [75, 25])
+			return q75 - q25
+		if stat == "p10":
+			return np.nanpercentile(v, 10)
+		if stat == "p90":
+			return np.nanpercentile(v, 90)
+		raise KeyError(stat)
 
 	def display_name(self) -> str:
 		return f"{self.name} (C{self.channel}) [{self.group}]"

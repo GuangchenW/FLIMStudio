@@ -29,6 +29,7 @@ from flimari.core.io import load_signal
 from flimari.core.widgets import ThemedButton, Indicator
 from .phasor_plot_widget import PhasorPlotWidget
 from .summary_widget import SummaryWidget
+from .umap_widget import UMAPWidget
 from ..core import Dataset
 
 if TYPE_CHECKING:
@@ -243,7 +244,7 @@ class SampleManagerWidget(QWidget):
 		self.dataset_list.itemSelectionChanged.connect(self._on_selection_changed)
 		root.addWidget(self.dataset_list)
 
-		# Open phasor plot buttn
+		# Open phasor plot button
 		self.btn_visualize = QPushButton("Visualize selected in phasor plot")
 		self.btn_visualize.clicked.connect(self._on_visualize_selected)
 		root.addWidget(self.btn_visualize)
@@ -253,6 +254,12 @@ class SampleManagerWidget(QWidget):
 		self.btn_summary.setToolTip("View/Export summary statistics of selected samples")
 		self.btn_summary.clicked.connect(self._on_btn_summary_clicked)
 		root.addWidget(self.btn_summary)
+
+		# UMAP analysis button
+		self.btn_umap = QPushButton("UMAP Analysis")
+		self.btn_umap.setToolTip("Perform UMAP analysis on selected datasets")
+		self.btn_umap.clicked.connect(self._on_btn_umap_clicked)
+		root.addWidget(self.btn_umap)
 
 		# Initialize the state of all selection related buttons
 		self._on_selection_changed()
@@ -303,6 +310,7 @@ class SampleManagerWidget(QWidget):
 		has_selected = len(self.dataset_list.selectedItems())>0
 		self.btn_assign_group.setEnabled(has_selected)
 		self.btn_calibrate.setEnabled(has_selected)
+		self.btn_apply_filter.setEnabled(has_selected)
 		self.btn_visualize.setEnabled(has_selected)
 		self.btn_summary.setEnabled(has_selected)
 		if has_selected:
@@ -375,6 +383,14 @@ class SampleManagerWidget(QWidget):
 		dock = self.viewer.window.add_dock_widget(summary_widget, name="Phasor Summary", area="bottom")
 		dock.setFloating(True)
 		# TODO: Perhaps we want to set this as undockable as well?
+
+	def _on_btn_umap_clicked(self) -> None:
+		datasets = self.get_selected_datasets()
+		if len(datasets) <= 0: return
+		# Make UMAP widget
+		umap_widget = UMAPWidget(datasets)
+		dock = self.viewer.window.add_dock_widget(umap_widget, name="UMAP Analysis", area="bottom")
+		dock.setFloating(True)
 
 	def _mark_all_stale(self) -> None:
 		# DANGER: manually changing phi_0 and m_0 does not trigger this
