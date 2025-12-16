@@ -1,7 +1,7 @@
-# FLIM Studio
+# FLIMari
 
-**FLIM Studio** is a modular plugin for **Fluorescence Lifetime Imaging Microscopy (FLIM)** analysis, built around the [napari](https://napari.org/) platform.  
-It provides an interactive, phasor-based lifetime visualization and analysis pipeline. Additional pipelines for single cell analysis are expected in the future. 
+**FLIMari** is a plugin for **Fluorescence Lifetime Imaging Microscopy (FLIM)** analysis, built around the [napari](https://napari.org/) platform.  
+It provides an interactive, phasor-based lifetime visualization and analysis pipeline.
 
 > ⚠️ **Pre-Alpha Notice**  
 > FLIM Studio is in **early development**. Features, APIs, and structure are subject to change.  
