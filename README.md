@@ -4,7 +4,7 @@
 It provides an interactive, phasor-based lifetime visualization and analysis pipeline.
 
 > ⚠️ **Pre-Alpha Notice**  
-> FLIM Studio is in **early development**. Features, APIs, and structure are subject to change.  
+> FLIMari is in **early development**. Features, APIs, and structure are subject to change.  
 > Not yet intended for public use.
 
 ---
