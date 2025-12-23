@@ -1,0 +1,6 @@
+site_name: FLIMari Docs
+nav:
+  - Home: index.md
+  - User Guide: tutorials.md
+  - Developer Guide: api.md
+  - About: about.md
