@@ -8,6 +8,4 @@ FLIMari is an open-source [Napari](https://napari.org) plugin for machine learni
 
 The [User Guide](user-guide/index.md) describes typical FLIMari workflows.
 
-The [Developer Guide](api.md) documents the programming interface of FLIMari and how to extend it.
-
 The [About](about.md) page lists organizations and persons who contributed to the development of the plugin.

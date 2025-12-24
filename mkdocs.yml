@@ -7,3 +7,8 @@ nav:
     - Programming Interface: user-guide/api.md
     - Additonal Resources: user-guide/extra.md
   - About: about.md
+theme:
+  name: material
+markdown_extensions:
+  - admonition
+  - pymdownx.blocks.caption
