@@ -12,3 +12,5 @@ theme:
 markdown_extensions:
   - admonition
   - pymdownx.blocks.caption
+  - toc:
+      permalink: "#"

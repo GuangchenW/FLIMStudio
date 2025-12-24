@@ -67,7 +67,7 @@ Successfully computed calibration
 
 ## Calibrate Loaded Datasets
 
-To calibrate datasets, simply select them in the [dataset list](tutorials.md#Manage FLIM data), then press the **Calibrate selected** button. The indicator lights will turn green once the calibration completes.
+To calibrate datasets, simply select them in the [dataset list](tutorials.md#manage-flim-data), then press the **Calibrate selected** button. The indicator lights will turn green once the calibration completes.
 
 ![Calibrate Phasor](../img/calibrate_phasor.png)
 /// caption
