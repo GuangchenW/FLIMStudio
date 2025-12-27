@@ -34,7 +34,7 @@ Each item in the dataset list corresponds to an imported FLIM file. It is made o
 * **Status indicator**: Whether this dataset has been calibrated. 
     * Red = uncalibrated
     * Green = calibrated
-    * Yellow = calibration has changed
+    * Yellow = calibration parameters have changed
 
 Items in the list can be freely selected and deselected using `SHIFT+LEFT MOUSE CLICK` and `CTRL+LEFT MOUSE CLICK`. Most FLIMari operations on datasets only affect selected datasets in the list.
 
@@ -65,7 +65,7 @@ Successfully computed calibration
 !!!tip
     All automatically set values in the Calibration GUI can be manually overridden. Manually set fields will turn blue. Press the **Reset** button next to the input field to reset its value to the previously automatically set value.
 
-## Calibrate Loaded Datasets
+## Calibrate Datasets
 
 To calibrate datasets, simply select them in the [dataset list](tutorials.md#manage-flim-data), then press the **Calibrate selected** button. The indicator lights will turn green once the calibration completes.
 
@@ -74,5 +74,66 @@ To calibrate datasets, simply select them in the [dataset list](tutorials.md#man
 Calibrate datasets
 ///
 
+!!!warning
+    Calibration may succeed even if no reference file has been loaded. Such calibration uses the default `Phase=0` and `Modulation=1`, meaning the phasor coordinates are unchanged. If your calibrated datasets do not behave as expected, check whether they have been actually calibrated against the reference.
+
 !!!tip
     Calibration parameters `Phase` and `Modulation` can be verified by importing the reference FLIM file as a regulat dataset, then calibrate it and confirm its phasor cloud centers on the universal semi-circle, at the correct lifetime position.
+
+## Apply Filters
+
+FLIM data often contains background pixels and pixels with low total photon counts. These pixels should not be included in FLIM analysis since they do not represent biological samples or are too noisy for any meaningful work. While the Phasor approach requires much fewer photon counts than fitting a parametric model, 25 to 30 photons are still required for accurate phasor coordinates.
+
+FLIMari offers two simple but effective filters: photon thresholding and the median filter. These two filters are applied sequentially, with the median filter being applied first and photon thresholding last.
+
+![Filter control](../img/default.jpg)
+/// caption
+Input fields for filter adjustments
+///
+
+The median filter is applied to both real and imaginary phasor coordinates independently. The filter kernel size and strength can be adjusted in the *Dataset control* section by changing the values of `Median filter size` and `Median filter repetition`. For a detailed explanation on how these parameters affect the behaviour of the median filter, please refer to the [numpy documentation](https://numpy.org/doc/stable/reference/generated/numpy.nanmedian.html).
+
+Photon thresholding is applied once to both real and imaginary phasor coordinates after the median filter. The thresholding is always based on the total photon counts in the original data, i.e., median filter has no effect on which pixel to be excluded. 
+
+The minimum and maximum photon threshold can be set in the *Dataset control* section by changing the values of `Min photon count` and `Max photon count`. Any pixel with a total photon count outside the specified range will be discarded during both visualization and analysis. 
+
+!!!tip
+    You can determine the optimal photon count threshold using napari's built-in colorbar.<p>
+    Make sure the dataset is in the `none` display mode (so that the image viewer shows the photon counts), then head to the napari layer list and right-click on the dataset, then select **Visualization -> colorbar**. Alternatively, you can also hover over the image to see the photon count of the pixel under the cursor.
+
+Filters are only applied/updated when the **Apply filter** button is pressed, and only apply to selected datasets. Both the original data and filtered data are stored, so you may re-apply the filters any number of times without reloading the imported data manually.
+
+!!!Note
+    Datasets store their last used filter parameters. You can select a dataset to view its filter parameters in the *Dataset control* GUI.<p>
+    If multiple datasets are selected and their filter parameters value differ, `...` will be shown in the GUI, indicating the selected datasets contain different values. You may still override this value and apply filters to all selected datasets using a common set of parameters, as normal.
+
+## Visualize Phasor
+
+To visualize the phasor coordinates of datasets, select them in the dataset list, then press the **Visualize Phasor** button. This opens the Phasor Plot widget with the selected datasets.
+
+![Phasor Plot](../img/default.jpg)
+/// caption
+The Phasor Plot widget
+///
+
+TODO
+
+## ROI Analysis
+
+TODO
+
+## UMAP Analysis
+
+TODO
+
+### UMAP Embeddings
+
+TODO
+
+### Clustering
+
+TODO
+
+## Summarize Datasets
+
+TODO
